@@ -25,3 +25,37 @@ export interface SpaceHealthRecord {
   overallStatus: AlertLevel; // Estado general consolidado
   protocolAction: string;    // Acción sugerida para emergencias offline
 }
+
+// Tipos de presentaciÃ³n que usa el mockup actual del panel.
+export type Status = 'ok' | 'watch' | 'act'
+export type ZoneId = 'head' | 'heart' | 'metabolism' | 'body' | 'legs'
+
+export interface Indicator {
+  id: string
+  name: string
+  value: string
+  unit: string
+  status: Status
+  reason: string
+  zone: ZoneId
+  history: number[]
+}
+
+export interface Mission {
+  day: number
+  place: string
+  lastCheck: string
+}
+
+export interface Zone {
+  id: ZoneId
+  name: string
+  about: string
+}
+
+export interface Notice {
+  indicatorId: string
+  title: string
+  summary: string
+  steps: string[]
+}
