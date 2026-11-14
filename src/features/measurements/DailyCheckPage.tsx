@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   Activity,
   Calendar,
@@ -6,8 +6,11 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
+  Database,
   Droplets,
+  HardDriveDownload,
   Heart,
+  History,
   Moon,
   RotateCcw,
   SlidersHorizontal,
@@ -27,29 +30,94 @@ export interface DailyMetrics {
   mood: 'Bad' | 'Fair' | 'Neutral' | 'Good' | 'Great'
 }
 
+export interface SavedRecord {
+  id: string
+  timestamp: string
+  timeStr: string
+  dateStr: string
+  metrics: DailyMetrics
+  notes?: string
+}
+
 interface Props {
   mission?: Mission
   onComplete?: (metrics: DailyMetrics) => void
 }
 
+const STORAGE_KEY = 'orbit_health_daily_records'
+
 export function DailyCheckPage({ mission, onComplete }: Props) {
   // Estado inicial acorde a la imagen de referencia
-  const [metrics, setMetrics] = useState<DailyMetrics>({
-    bloodPressureSys: 128,
-    bloodPressureDia: 82,
-    heartRate: 64,
-    bloodSugar: 96,
-    bodyTemperature: 36.7,
-    sleepHours: 5.2,
-    mood: 'Good',
+  const [metrics, setMetrics] = useState<DailyMetrics>(() => {
+    try {
+      const saved = localStorage.getItem('orbit_health_current_metrics')
+      if (saved) return JSON.parse(saved)
+    } catch {
+      // fallback
+    }
+    return {
+      bloodPressureSys: 128,
+      bloodPressureDia: 82,
+      heartRate: 64,
+      bloodSugar: 96,
+      bodyTemperature: 36.7,
+      sleepHours: 5.2,
+      mood: 'Good',
+    }
+  })
+
+  const [savedRecords, setSavedRecords] = useState<SavedRecord[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY)
+      if (saved) return JSON.parse(saved)
+    } catch {
+      // fallback
+    }
+    return [
+      {
+        id: 'rec-init-01',
+        timestamp: new Date().toISOString(),
+        dateStr: 'Nov 14, 2026',
+        timeStr: '07:10',
+        metrics: {
+          bloodPressureSys: 128,
+          bloodPressureDia: 82,
+          heartRate: 64,
+          bloodSugar: 96,
+          bodyTemperature: 36.7,
+          sleepHours: 5.2,
+          mood: 'Good',
+        },
+      },
+    ]
   })
 
   const [isCompleted, setIsCompleted] = useState(true)
   const [isAssistantOpen, setIsAssistantOpen] = useState(false)
+  const [showHistoryModal, setShowHistoryModal] = useState(false)
   const [currentStep, setCurrentStep] = useState(0)
+  const [lastSavedTime, setLastSavedTime] = useState('07:10')
+  const [notification, setNotification] = useState<string | null>(null)
 
   // Asistente temporal de edición
   const [tempMetrics, setTempMetrics] = useState<DailyMetrics>(metrics)
+
+  // Guardar en localStorage cada vez que cambien los registros
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(savedRecords))
+      localStorage.setItem('orbit_health_current_metrics', JSON.stringify(metrics))
+    } catch {
+      // ignore in incognito or restricted mode
+    }
+  }, [savedRecords, metrics])
+
+  // Desvanecer notificación tras 4 segundos
+  useEffect(() => {
+    if (!notification) return
+    const timer = setTimeout(() => setNotification(null), 4000)
+    return () => clearTimeout(timer)
+  }, [notification])
 
   const openAssistant = (stepIndex = 0) => {
     setTempMetrics({ ...metrics })
@@ -57,10 +125,57 @@ export function DailyCheckPage({ mission, onComplete }: Props) {
     setIsAssistantOpen(true)
   }
 
+  // Función principal para REGISTRAR TODOS LOS DATOS
+  const handleRegisterAllData = () => {
+    const now = new Date()
+    const hours = String(now.getHours()).padStart(2, '0')
+    const minutes = String(now.getMinutes()).padStart(2, '0')
+    const formattedTime = `${hours}:${minutes}`
+
+    const newRecord: SavedRecord = {
+      id: `rec-${Date.now()}`,
+      timestamp: now.toISOString(),
+      dateStr: 'Nov 14, 2026',
+      timeStr: formattedTime,
+      metrics: { ...metrics },
+    }
+
+    setSavedRecords((prev) => [newRecord, ...prev])
+    setLastSavedTime(formattedTime)
+    setIsCompleted(true)
+    setNotification(
+      `¡Datos registrados! Se guardaron exitosamente los 6 indicadores de salud en la telemetría local (${formattedTime}).`
+    )
+
+    if (onComplete) {
+      onComplete(metrics)
+    }
+  }
+
   const handleSaveAssistant = () => {
     setMetrics(tempMetrics)
     setIsCompleted(true)
     setIsAssistantOpen(false)
+
+    const now = new Date()
+    const hours = String(now.getHours()).padStart(2, '0')
+    const minutes = String(now.getMinutes()).padStart(2, '0')
+    const formattedTime = `${hours}:${minutes}`
+
+    const newRecord: SavedRecord = {
+      id: `rec-${Date.now()}`,
+      timestamp: now.toISOString(),
+      dateStr: 'Nov 14, 2026',
+      timeStr: formattedTime,
+      metrics: { ...tempMetrics },
+    }
+
+    setSavedRecords((prev) => [newRecord, ...prev])
+    setLastSavedTime(formattedTime)
+    setNotification(
+      `¡Chequeo completado y registrado! Telemetría actualizada en el almacenamiento de la nave (${formattedTime}).`
+    )
+
     if (onComplete) {
       onComplete(tempMetrics)
     }
@@ -112,11 +227,32 @@ export function DailyCheckPage({ mission, onComplete }: Props) {
   ]
 
   const missionPlace = mission?.place ?? 'Lunar transit'
-  const lastCheck = mission?.lastCheck ?? '07:10'
+  const displayLastCheck = lastSavedTime || mission?.lastCheck || '07:10'
 
   return (
     <main className="min-w-0 px-4 py-5 sm:px-6 sm:py-8 lg:px-8">
       <div className="mx-auto max-w-5xl">
+        {/* Notificación flotante de confirmación de registro */}
+        {notification && (
+          <div
+            role="status"
+            className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-[#5cc98b] bg-[#12362c] px-4 py-3 text-sm font-medium text-[#5cc98b] shadow-xl animate-in fade-in slide-in-from-top-2"
+          >
+            <div className="flex items-center gap-2.5">
+              <CheckCircle2 className="h-5 w-5 shrink-0 stroke-[2.5]" />
+              <span>{notification}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setNotification(null)}
+              className="rounded p-1 text-[#5cc98b] hover:bg-[#184840]"
+              aria-label="Cerrar notificación"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+
         {/* Encabezado superior */}
         <header className="mb-6 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
           <div>
@@ -124,8 +260,10 @@ export function DailyCheckPage({ mission, onComplete }: Props) {
               Daily check
             </h1>
           </div>
-          <div className="text-right text-sm text-mute">
-            <span>{missionPlace}</span>, last check <span className="text-text">{lastCheck}</span>
+          <div className="flex items-center gap-3 text-right text-sm text-mute">
+            <span>
+              {missionPlace}, last check <span className="text-text font-medium">{displayLastCheck}</span>
+            </span>
           </div>
         </header>
 
@@ -156,12 +294,24 @@ export function DailyCheckPage({ mission, onComplete }: Props) {
               </div>
             </div>
 
-            {/* Píldora de fecha */}
-            <div className="flex items-center justify-between gap-3 sm:justify-end">
+            {/* Píldora de fecha y botones de acceso */}
+            <div className="flex flex-wrap items-center justify-between gap-2.5 sm:justify-end">
               <div className="inline-flex items-center gap-2 rounded-full border border-edge bg-rail/80 px-4 py-1.5 text-sm font-medium text-text backdrop-blur-sm">
                 <Calendar className="h-4 w-4 text-[#5cc98b]" />
                 <span>Nov 14, 2026</span>
               </div>
+
+              {savedRecords.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setShowHistoryModal(true)}
+                  title="Ver registros guardados"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-edge bg-rail/90 px-3.5 py-1.5 text-xs font-medium text-mute transition-colors hover:border-[#5cc98b]/50 hover:text-text cursor-pointer"
+                >
+                  <History className="h-3.5 w-3.5 text-[#5cc98b]" />
+                  <span>Historial ({savedRecords.length})</span>
+                </button>
+              )}
 
               <button
                 type="button"
@@ -182,14 +332,16 @@ export function DailyCheckPage({ mission, onComplete }: Props) {
             <h2 className="font-display text-xl font-semibold tracking-wide text-text">
               Check your health
             </h2>
-            <button
-              type="button"
-              onClick={() => openAssistant(0)}
-              className="hidden items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium text-mute transition-colors hover:text-text cursor-pointer sm:inline-flex"
-            >
-              <RotateCcw className="h-3.5 w-3.5 text-[#5cc98b]" />
-              <span>Re-record check</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => openAssistant(0)}
+                className="hidden items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium text-mute transition-colors hover:text-text cursor-pointer sm:inline-flex"
+              >
+                <RotateCcw className="h-3.5 w-3.5 text-[#5cc98b]" />
+                <span>Modificar valores</span>
+              </button>
+            </div>
           </div>
 
           {/* Grilla 3x2 de tarjetas */}
@@ -357,18 +509,105 @@ export function DailyCheckPage({ mission, onComplete }: Props) {
           </div>
         </section>
 
-        {/* Botón inferior ancho completo: Daily check completed */}
-        <section className="mt-8">
+        {/* ÁREA DE ACCIÓN: BOTÓN PARA REGISTRAR TODOS LOS DATOS GUARDADOS */}
+        <section className="mt-8 flex flex-col gap-3 sm:flex-row">
+          {/* Botón principal: Registrar todos los datos */}
+          <button
+            type="button"
+            onClick={handleRegisterAllData}
+            className="group flex flex-1 items-center justify-center gap-3 rounded-xl border-2 border-[#5cc98b] bg-[#143734]/50 px-6 py-4 text-base font-bold text-[#5cc98b] shadow-lg shadow-black/20 transition-all hover:bg-[#143734]/80 hover:shadow-[#5cc98b]/20 hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+          >
+            <HardDriveDownload className="h-5 w-5 stroke-[2.5] transition-transform group-hover:translate-y-0.5" />
+            <span>Registrar todos los datos guardados</span>
+          </button>
+
+          {/* Botón secundario: Estado completado / Asistente */}
           <button
             type="button"
             onClick={() => openAssistant(0)}
-            className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-[#2d7d6b] bg-[#143734]/30 px-6 py-4 text-base font-semibold text-[#5cc98b] shadow-sm transition-all hover:bg-[#143734]/50 hover:border-[#5cc98b] cursor-pointer"
+            className="flex items-center justify-center gap-2 rounded-xl border border-edge bg-[#14283d] px-5 py-4 text-sm font-semibold text-text transition-all hover:border-[#5cc98b]/60 hover:bg-[#17324c] cursor-pointer"
           >
-            <CheckCircle2 className="h-5 w-5 stroke-[2.5]" />
+            <CheckCircle2 className="h-5 w-5 text-[#5cc98b]" />
             <span>Daily check completed</span>
           </button>
         </section>
       </div>
+
+      {/* Modal / Historial de registros guardados */}
+      {showHistoryModal && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm"
+        >
+          <div className="relative w-full max-w-2xl rounded-2xl border border-edge bg-[#102438] p-6 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-edge pb-4">
+              <div className="flex items-center gap-2.5">
+                <Database className="h-5 w-5 text-[#5cc98b]" />
+                <h3 className="font-display text-xl font-bold text-text">
+                  Registros de Telemetría Guardados ({savedRecords.length})
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowHistoryModal(false)}
+                className="rounded-lg p-1 text-mute hover:bg-panel hover:text-text cursor-pointer"
+                aria-label="Cerrar"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="mt-4 max-h-96 overflow-y-auto space-y-3 pr-1">
+              {savedRecords.map((rec) => (
+                <div
+                  key={rec.id}
+                  className="rounded-xl border border-edge bg-[#14283d] p-4 text-sm"
+                >
+                  <div className="flex items-center justify-between border-b border-edge/60 pb-2 mb-2">
+                    <span className="font-semibold text-text">
+                      {rec.dateStr} — {rec.timeStr}
+                    </span>
+                    <span className="inline-flex items-center gap-1 rounded bg-[#184840] px-2 py-0.5 text-xs font-medium text-[#5cc98b]">
+                      <Check className="h-3 w-3 stroke-[3]" /> Guardado local
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs text-mute">
+                    <div>
+                      Presión: <span className="text-text font-medium">{rec.metrics.bloodPressureSys}/{rec.metrics.bloodPressureDia} mmHg</span>
+                    </div>
+                    <div>
+                      Frec. Cardíaca: <span className="text-text font-medium">{rec.metrics.heartRate} bpm</span>
+                    </div>
+                    <div>
+                      Glucosa: <span className="text-text font-medium">{rec.metrics.bloodSugar} mg/dL</span>
+                    </div>
+                    <div>
+                      Temperatura: <span className="text-text font-medium">{rec.metrics.bodyTemperature.toFixed(1)} °C</span>
+                    </div>
+                    <div>
+                      Sueño: <span className="text-text font-medium">{rec.metrics.sleepHours} hrs</span>
+                    </div>
+                    <div>
+                      Ánimo: <span className="text-text font-medium">{rec.metrics.mood}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-5 flex justify-end border-t border-edge pt-4">
+              <button
+                type="button"
+                onClick={() => setShowHistoryModal(false)}
+                className="rounded-lg bg-panel px-4 py-2 text-sm font-semibold text-text hover:bg-edge cursor-pointer"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal / Asistente interactivo de 6 pasos para registro en cabina */}
       {isAssistantOpen && (
@@ -382,15 +621,15 @@ export function DailyCheckPage({ mission, onComplete }: Props) {
             <div className="flex items-center justify-between border-b border-edge pb-4">
               <div className="flex items-center gap-2">
                 <span className="rounded bg-[#184840] px-2 py-0.5 text-xs font-semibold uppercase text-[#5cc98b]">
-                  Step {currentStep + 1} of {steps.length}
+                  Paso {currentStep + 1} de {steps.length}
                 </span>
-                <span className="text-xs text-mute">Offline Telemetry</span>
+                <span className="text-xs text-mute">Telemetría Offline</span>
               </div>
               <button
                 type="button"
                 onClick={() => setIsAssistantOpen(false)}
                 className="rounded-lg p-1 text-mute transition-colors hover:bg-panel hover:text-text cursor-pointer"
-                aria-label="Close"
+                aria-label="Cerrar"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -421,7 +660,7 @@ export function DailyCheckPage({ mission, onComplete }: Props) {
                   <div className="space-y-4">
                     <div>
                       <label className="text-xs font-semibold uppercase text-mute">
-                        Systolic Pressure (mmHg)
+                        Presión Sistólica (mmHg)
                       </label>
                       <div className="mt-1 flex items-center gap-3">
                         <input
@@ -444,7 +683,7 @@ export function DailyCheckPage({ mission, onComplete }: Props) {
                     </div>
                     <div>
                       <label className="text-xs font-semibold uppercase text-mute">
-                        Diastolic Pressure (mmHg)
+                        Presión Diastólica (mmHg)
                       </label>
                       <div className="mt-1 flex items-center gap-3">
                         <input
@@ -471,7 +710,7 @@ export function DailyCheckPage({ mission, onComplete }: Props) {
                 {currentStep === 1 && (
                   <div>
                     <label className="text-xs font-semibold uppercase text-mute">
-                      Resting Heart Rate (bpm)
+                      Frecuencia Cardíaca en Reposo (bpm)
                     </label>
                     <div className="mt-2 flex items-center gap-3">
                       <input
@@ -497,7 +736,7 @@ export function DailyCheckPage({ mission, onComplete }: Props) {
                 {currentStep === 2 && (
                   <div>
                     <label className="text-xs font-semibold uppercase text-mute">
-                      Blood Sugar (mg/dL)
+                      Nivel de Glucosa (mg/dL)
                     </label>
                     <div className="mt-2 flex items-center gap-3">
                       <input
@@ -523,7 +762,7 @@ export function DailyCheckPage({ mission, onComplete }: Props) {
                 {currentStep === 3 && (
                   <div>
                     <label className="text-xs font-semibold uppercase text-mute">
-                      Body Temperature (°C)
+                      Temperatura Corporal (°C)
                     </label>
                     <div className="mt-2 flex items-center gap-3">
                       <input
@@ -550,7 +789,7 @@ export function DailyCheckPage({ mission, onComplete }: Props) {
                 {currentStep === 4 && (
                   <div>
                     <label className="text-xs font-semibold uppercase text-mute">
-                      Sleep Duration (hours)
+                      Horas de Sueño (horas)
                     </label>
                     <div className="mt-2 flex items-center gap-3">
                       <input
@@ -577,7 +816,7 @@ export function DailyCheckPage({ mission, onComplete }: Props) {
                 {currentStep === 5 && (
                   <div>
                     <label className="text-xs font-semibold uppercase text-mute">
-                      Mood / Psychological State
+                      Estado de Ánimo / Cognitivo
                     </label>
                     <div className="mt-3 grid grid-cols-5 gap-2">
                       {(['Bad', 'Fair', 'Neutral', 'Good', 'Great'] as const).map((m) => (
@@ -609,7 +848,7 @@ export function DailyCheckPage({ mission, onComplete }: Props) {
                 className="inline-flex items-center gap-1 rounded-lg border border-edge px-3 py-2 text-sm text-mute transition-colors hover:text-text disabled:opacity-40 cursor-pointer"
               >
                 <ChevronLeft className="h-4 w-4" />
-                <span>Previous</span>
+                <span>Anterior</span>
               </button>
 
               {currentStep < steps.length - 1 ? (
@@ -618,7 +857,7 @@ export function DailyCheckPage({ mission, onComplete }: Props) {
                   onClick={() => setCurrentStep((prev) => Math.min(steps.length - 1, prev + 1))}
                   className="inline-flex items-center gap-1 rounded-lg bg-[#184840] px-4 py-2 text-sm font-semibold text-[#5cc98b] hover:bg-[#1d5950] cursor-pointer"
                 >
-                  <span>Next step</span>
+                  <span>Siguiente paso</span>
                   <ChevronRight className="h-4 w-4" />
                 </button>
               ) : (
@@ -628,7 +867,7 @@ export function DailyCheckPage({ mission, onComplete }: Props) {
                   className="inline-flex items-center gap-1.5 rounded-lg bg-[#5cc98b] px-5 py-2 text-sm font-bold text-[#0c1e2f] hover:bg-[#6edba0] cursor-pointer"
                 >
                   <Check className="h-4 w-4 stroke-[3]" />
-                  <span>Save check</span>
+                  <span>Guardar y registrar</span>
                 </button>
               )}
             </div>
@@ -638,3 +877,5 @@ export function DailyCheckPage({ mission, onComplete }: Props) {
     </main>
   )
 }
+
+
