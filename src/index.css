@@ -21,14 +21,15 @@
   --color-fig: #2b4f70;
 
   /* Estados de salud. Siempre acompañados de texto, nunca solo color. */
-  --color-ok: #5cc98b;
-  --color-watch: #f2b544;
+  --color-ok: #3ea86a;
+  --color-watch: #c25e2e;
   --color-act: #f0645a;
+  --color-select: #6366f1;
 
   /* Aviso de atención (fondo y borde) */
-  --color-notice: #2a2a1c;
-  --color-notice-edge: #6b5a24;
-  --color-on-watch: #2a1e00;
+  --color-notice: #2a1f1a;
+  --color-notice-edge: #7c3a21;
+  --color-on-watch: #ffffff;
 
   --font-sans: 'Barlow', system-ui, sans-serif;
   --font-display: 'Barlow Semi Condensed', 'Barlow', system-ui, sans-serif;

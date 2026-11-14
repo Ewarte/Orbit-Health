@@ -57,7 +57,16 @@ export function DashboardPage({ mission, zones, indicators, notices }: Props) {
       </main>
 
       <aside aria-label="Body map" className="bg-rail px-4 py-6 sm:px-6 xl:px-5">
-        <BodyFigure zones={figureZones} selected={selected} onSelect={setSelected} className="mx-auto mb-4 block h-72 max-w-full sm:h-80 xl:h-96" />
+        <div className="mb-5 rounded-3xl border border-edge/60 bg-gradient-to-b from-panel/40 to-panel/10 p-5 shadow-lg backdrop-blur-md">
+          <div className="mb-3 flex items-center justify-between border-b border-edge/40 pb-2.5 text-xs">
+            <span className="font-semibold uppercase tracking-wider text-mute">Biometric Map</span>
+            <span className="inline-flex items-center gap-1.5 font-mono text-[11px] text-ok">
+              <span className="h-1.5 w-1.5 rounded-full bg-ok animate-pulse" />
+              LIVE TELEMETRY
+            </span>
+          </div>
+          <BodyFigure zones={figureZones} selected={selected} onSelect={setSelected} className="mx-auto block h-72 max-w-full sm:h-80 xl:h-96" />
+        </div>
         {zone && (
           <div aria-live="polite">
             <h2 className="m-0 font-display text-xl font-semibold">{zone.name}</h2>

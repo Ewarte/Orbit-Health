@@ -11,11 +11,11 @@ export const mission: Mission = {
 }
 
 export const zones: Zone[] = [
-  { id: 'head', name: 'Head and rest', about: 'Sleep, mood and vision. Isolation shifts sleep and mood; fluids moving toward the head can affect your eyes.' },
-  { id: 'heart', name: 'Heart and circulation', about: 'Blood pressure and heart rate. Fluids shift toward the upper body in low gravity.' },
-  { id: 'metabolism', name: 'Metabolism', about: 'Blood sugar. Diet and activity change how your body uses energy on a mission.' },
-  { id: 'body', name: 'Whole body', about: 'Body temperature. An early sign of infection in a closed cabin.' },
-  { id: 'legs', name: 'Bones and muscles', about: 'Without gravity, bones and muscles weaken unless you exercise.' },
+  { id: 'head', name: 'Brain & behavior', about: 'Hazard: Isolation and confinement; shifting light cycles and work demands. NASA lists chronic sleep loss, constant work demands and irregular body clocks as risks, and notes that isolation, radiation and distance from Earth can take a toll on mental health.' },
+  { id: 'heart', name: 'Heart & circulation', about: 'Blood pressure and heart rate. Microgravity causes bodily fluids to shift upward into the chest and head, altering cardiovascular workload.' },
+  { id: 'metabolism', name: 'Metabolism & nutrition', about: 'Blood sugar and energy regulation. Microgravity and space diet alter how the body stores and utilizes metabolic fuel.' },
+  { id: 'body', name: 'Whole body & immune', about: 'Body temperature and infection monitoring. Closed-loop spacecraft environments require close vigilance of immune responses.' },
+  { id: 'legs', name: 'Bones & muscles', about: 'Bone density and muscle conditioning. In zero gravity, bones and muscles undergo rapid deconditioning without rigorous daily countermeasures.' },
 ]
 
 export const indicators: Indicator[] = [
@@ -23,11 +23,10 @@ export const indicators: Indicator[] = [
   { id: 'hr', name: 'Heart rate', value: '64', unit: 'bpm', status: 'ok', reason: '', zone: 'heart', history: [65, 63, 66, 64, 65, 63, 64] },
   { id: 'glucose', name: 'Blood sugar', value: '96', unit: 'mg/dL', status: 'ok', reason: '', zone: 'metabolism', history: [98, 93, 97, 94, 99, 95, 96] },
   { id: 'temp', name: 'Body temperature', value: '36.7', unit: '°C', status: 'ok', reason: '', zone: 'body', history: [36.6, 36.6, 36.7, 36.5, 36.6, 36.6, 36.7] },
-  { id: 'sleep', name: 'Sleep', value: '5.2', unit: 'hours', status: 'watch', reason: '3 short nights', zone: 'head', history: [7.4, 7.2, 7.4, 6.8, 5.6, 5.3, 5.2] },
-  { id: 'mood', name: 'Mood', value: '2', unit: 'of 5', status: 'watch', reason: 'below your usual', zone: 'head', history: [4, 4, 4, 3, 3, 2, 2] },
-  // Respuesta sí/no del chequeo, sin tendencia numérica.
+  { id: 'sleep', name: 'Sleep', value: '5.8', unit: 'h', status: 'watch', reason: '3 short nights', zone: 'head', history: [7.4, 7.2, 7.4, 6.8, 5.6, 5.8, 5.8] },
+  { id: 'mood', name: 'Mood', value: '3', unit: 'of 5', status: 'watch', reason: 'below your usual', zone: 'head', history: [4, 4, 4, 3, 3, 3, 3] },
   { id: 'vision', name: 'Vision', value: 'No change', unit: '', status: 'ok', reason: '', zone: 'head', history: [] },
-  { id: 'exercise', name: 'Exercise', value: '85', unit: 'min today', status: 'ok', reason: '', zone: 'legs', history: [90, 80, 95, 0, 90, 85, 85] },
+  { id: 'exercise', name: 'Bone & muscle session', value: '45', unit: 'min today', status: 'watch', reason: 'Below 80 min orbital protocol', zone: 'legs', history: [90, 80, 85, 40, 50, 45, 45] },
 ]
 
 export const notices: Notice[] = [
