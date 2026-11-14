@@ -10,9 +10,10 @@ interface Props {
   zones: Zone[]
   indicators: Indicator[]
   notices: Notice[]
+  onGuidance?: () => void
 }
 
-export function DashboardPage({ mission, zones, indicators, notices }: Props) {
+export function DashboardPage({ mission, zones, indicators, notices, onGuidance }: Props) {
   const zoneStatus = (id: ZoneId): Status | undefined =>
     worstStatus(indicators.filter((i) => i.zone === id).map((i) => i.status))
 
@@ -52,7 +53,7 @@ export function DashboardPage({ mission, zones, indicators, notices }: Props) {
         </ul>
 
         {notices.map((notice) => (
-          <NoticeCard key={notice.indicatorId} notice={notice} />
+          <NoticeCard key={notice.indicatorId} notice={notice} onGuidance={onGuidance} />
         ))}
       </main>
 

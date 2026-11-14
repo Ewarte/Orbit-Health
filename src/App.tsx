@@ -3,40 +3,58 @@ import { DashboardPage } from './components/dashboard/DashboardPage'
 import { AppShell, type NavItem } from './components/layout/AppShell'
 import { indicators, mission, notices, zones } from './data/mock'
 import { DailyCheckPage } from './features/measurements/DailyCheckPage'
+import type { DailyMetrics } from './features/measurements/dailyCheckTypes'
+import { evaluateDailyMetrics } from './features/evaluation/healthEngine'
+import { GuidancePage } from './features/guidance/GuidancePage'
+import { actionGuides } from './data/actionGuides'
+import { MissionPage } from './features/mission/MissionPage'
+import { RoutinePage } from './features/mission/RoutinePage'
 import { TrendsPage } from './features/trends/TrendsPage'
 
 const nav: NavItem[] = [
   { id: 'today', label: 'Today', ready: true },
   { id: 'check', label: 'Daily check', ready: true },
   { id: 'trends', label: 'Trends', ready: true },
+  { id: 'guidance', label: 'Guidance', ready: true },
   { id: 'routine', label: 'Routine', ready: true },
   { id: 'mission', label: 'Mission', ready: true },
 ]
 
-const screenCopy: Record<string, { title: string; description: string }> = {
-  routine: { title: 'Routine', description: 'Keep the crew routine visible during the mission.' },
-  mission: { title: 'Mission', description: 'Mission day and cabin context.' },
-}
-
 export default function App() {
   const [current, setCurrent] = useState('check')
+  const [missionState, setMissionState] = useState(() => {
+    try {
+      const saved = localStorage.getItem('orbit_health_mission_config')
+      return saved ? JSON.parse(saved) as typeof mission : mission
+    } catch { return mission }
+  })
+  const [liveMetrics, setLiveMetrics] = useState<DailyMetrics>(() => {
+    try {
+      const saved = localStorage.getItem('orbit_health_current_metrics')
+      if (saved) return JSON.parse(saved) as DailyMetrics
+    } catch {
+      // Usar el panel nominal si no hay datos locales.
+    }
+    return { bloodPressureSys: 128, bloodPressureDia: 82, heartRate: 64, bloodSugar: 96, bodyTemperature: 36.7, sleepHours: 5.2, mood: 'Good' }
+  })
+  const liveIndicators = indicators.map((base) => evaluateDailyMetrics(liveMetrics).find((live) => live.id === base.id) ?? base)
 
   return (
     <AppShell nav={nav} current={current} onNavigate={setCurrent}>
       {current === 'today' ? (
-        <DashboardPage mission={mission} zones={zones} indicators={indicators} notices={notices} />
+        <DashboardPage mission={missionState} zones={zones} indicators={liveIndicators} notices={notices} onGuidance={() => setCurrent('guidance')} />
       ) : current === 'check' ? (
-        <DailyCheckPage mission={mission} onNavigate={setCurrent} />
+        <DailyCheckPage mission={missionState} onNavigate={setCurrent} onComplete={setLiveMetrics} />
       ) : current === 'trends' ? (
-        <TrendsPage mission={mission} onNavigate={setCurrent} />
+        <TrendsPage mission={missionState} onNavigate={setCurrent} />
+      ) : current === 'guidance' ? (
+        <GuidancePage notices={notices} guides={actionGuides} />
+      ) : current === 'routine' ? (
+        <RoutinePage />
+      ) : current === 'mission' ? (
+        <MissionPage mission={missionState} onSave={(nextMission) => { setMissionState(nextMission); localStorage.setItem('orbit_health_mission_config', JSON.stringify(nextMission)) }} />
       ) : (
-        <main className="px-4 py-6 sm:px-6">
-          <div className="max-w-2xl rounded-lg border border-edge bg-panel p-6">
-            <p className="m-0 text-sm font-semibold uppercase tracking-wide text-watch">Prototype</p>
-            <h1 className="mt-2 mb-2 font-display text-3xl font-semibold">{screenCopy[current].title}</h1>
-            <p className="m-0 text-mute">{screenCopy[current].description}</p>
-          </div>
-        </main>
+        <RoutinePage />
       )}
     </AppShell>
   )
