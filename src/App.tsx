@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { DashboardPage } from './components/dashboard/DashboardPage'
 import { AppShell, type NavItem } from './components/layout/AppShell'
 import { indicators, mission, notices, zones } from './data/mock'
+import { DailyCheckPage } from './features/measurements/DailyCheckPage'
 
 const nav: NavItem[] = [
   { id: 'today', label: 'Today', ready: true },
@@ -12,19 +13,20 @@ const nav: NavItem[] = [
 ]
 
 const screenCopy: Record<string, { title: string; description: string }> = {
-  check: { title: 'Daily check', description: 'Record the six health signals for today.' },
   trends: { title: 'Trends', description: 'Review recent readings and changes over time.' },
   routine: { title: 'Routine', description: 'Keep the crew routine visible during the mission.' },
   mission: { title: 'Mission', description: 'Mission day and cabin context.' },
 }
 
 export default function App() {
-  const [current, setCurrent] = useState('today')
+  const [current, setCurrent] = useState('check')
 
   return (
     <AppShell nav={nav} current={current} onNavigate={setCurrent}>
       {current === 'today' ? (
         <DashboardPage mission={mission} zones={zones} indicators={indicators} notices={notices} />
+      ) : current === 'check' ? (
+        <DailyCheckPage mission={mission} />
       ) : (
         <main className="px-4 py-6 sm:px-6">
           <div className="max-w-2xl rounded-lg border border-edge bg-panel p-6">
