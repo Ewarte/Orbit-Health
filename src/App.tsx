@@ -3,6 +3,7 @@ import { DashboardPage } from './components/dashboard/DashboardPage'
 import { AppShell, type NavItem } from './components/layout/AppShell'
 import { indicators, mission, notices, zones } from './data/mock'
 import { DailyCheckPage } from './features/measurements/DailyCheckPage'
+import { TrendsPage } from './features/trends/TrendsPage'
 
 const nav: NavItem[] = [
   { id: 'today', label: 'Today', ready: true },
@@ -13,7 +14,6 @@ const nav: NavItem[] = [
 ]
 
 const screenCopy: Record<string, { title: string; description: string }> = {
-  trends: { title: 'Trends', description: 'Review recent readings and changes over time.' },
   routine: { title: 'Routine', description: 'Keep the crew routine visible during the mission.' },
   mission: { title: 'Mission', description: 'Mission day and cabin context.' },
 }
@@ -26,7 +26,9 @@ export default function App() {
       {current === 'today' ? (
         <DashboardPage mission={mission} zones={zones} indicators={indicators} notices={notices} />
       ) : current === 'check' ? (
-        <DailyCheckPage mission={mission} />
+        <DailyCheckPage mission={mission} onNavigate={setCurrent} />
+      ) : current === 'trends' ? (
+        <TrendsPage mission={mission} onNavigate={setCurrent} />
       ) : (
         <main className="px-4 py-6 sm:px-6">
           <div className="max-w-2xl rounded-lg border border-edge bg-panel p-6">

@@ -16,6 +16,7 @@ import {
   SlidersHorizontal,
   Smile,
   Thermometer,
+  TrendingUp,
   X,
 } from 'lucide-react'
 import type { Mission } from '../../types'
@@ -42,11 +43,12 @@ export interface SavedRecord {
 interface Props {
   mission?: Mission
   onComplete?: (metrics: DailyMetrics) => void
+  onNavigate?: (screen: string) => void
 }
 
 const STORAGE_KEY = 'orbit_health_daily_records'
 
-export function DailyCheckPage({ mission, onComplete }: Props) {
+export function DailyCheckPage({ mission, onComplete, onNavigate }: Props) {
   // Estado inicial acorde a la imagen de referencia
   const [metrics, setMetrics] = useState<DailyMetrics>(() => {
     try {
@@ -313,6 +315,18 @@ export function DailyCheckPage({ mission, onComplete }: Props) {
                 </button>
               )}
 
+              {onNavigate && (
+                <button
+                  type="button"
+                  onClick={() => onNavigate('trends')}
+                  title="Ver tendencias y gráficos de salud"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-edge bg-rail/90 px-3.5 py-1.5 text-xs font-medium text-mute transition-colors hover:border-[#5cc98b]/50 hover:text-text cursor-pointer"
+                >
+                  <TrendingUp className="h-3.5 w-3.5 text-[#5cc98b]" />
+                  <span>Tendencias (7d)</span>
+                </button>
+              )}
+
               <button
                 type="button"
                 onClick={() => openAssistant(0)}
@@ -530,6 +544,18 @@ export function DailyCheckPage({ mission, onComplete }: Props) {
             <CheckCircle2 className="h-5 w-5 text-[#5cc98b]" />
             <span>Daily check completed</span>
           </button>
+
+          {/* Botón terciario: Ver tendencias */}
+          {onNavigate && (
+            <button
+              type="button"
+              onClick={() => onNavigate('trends')}
+              className="flex items-center justify-center gap-2 rounded-xl border border-edge bg-[#14283d] px-5 py-4 text-sm font-semibold text-text transition-all hover:border-[#5cc98b]/60 hover:bg-[#17324c] cursor-pointer"
+            >
+              <TrendingUp className="h-5 w-5 text-[#5cc98b]" />
+              <span>Ver tendencias (7d)</span>
+            </button>
+          )}
         </section>
       </div>
 
