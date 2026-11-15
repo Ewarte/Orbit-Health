@@ -4,6 +4,7 @@ import { Html, OrbitControls, useGLTF } from '@react-three/drei'
 import * as THREE from 'three'
 import type { Indicator, Status, ZoneId } from '../../types'
 import type { MessageKey } from '../../lib/i18n'
+import anatomiaUrl from '../../assets/anatomia.glb'
 import { useI18n } from '../../lib/useI18n'
 import { HoloShell } from './HoloShell'
 import {
@@ -31,14 +32,14 @@ import {
 
 /* ═══════════════════════════════════════════════════════════════════════
    HOLOGRAMA UNIFICADO
-   Todo sale de public/anatomia.glb (BodyParts3D), así silueta, órganos y huesos comparten postura.
+   Todo sale de src/assets/anatomia.glb (BodyParts3D), así silueta, órganos y huesos comparten postura.
    Vista general: la piel dibujada como malla de alambre, coloreada por zona.
    Al elegir una zona la cámara se acerca y aparecen sus órganos y huesos.
    Al tocar un órgano, el zoom se cierra sobre él y aparece su nombre.
    ═══════════════════════════════════════════════════════════════════════ */
 
 const SKIN = 'piel'
-const ANATOMY_URL = '/anatomia.glb'
+const ANATOMY_URL = anatomiaUrl
 
 /**
  * Posición de cada baliza en coordenadas normalizadas del cuerpo (lado, altura, profundidad; ver `normalizePoint`).

@@ -59,7 +59,7 @@ export const CLOUD_POSITIONS: Record<ZoneId, CloudPosition> = {
    - body: TODO el cuerpo (la piel; al elegirla se resalta toda la silueta).
    - legs («Huesos y músculos»): todo el esqueleto y las extremidades. El id interno sigue siendo 'legs'. */
 
-/** Zona a la que pertenece cada malla de public/anatomia.glb. */
+/** Zona a la que pertenece cada malla de src/assets/anatomia.glb. */
 export const ZONE_OF_MESH: Record<string, ZoneId> = {
   // Cerebro y conducta
   cerebro: 'head',

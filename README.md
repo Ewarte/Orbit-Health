@@ -14,7 +14,12 @@ npm run dev      # servidor local en http://localhost:5173
 npm run build    # revisa tipos y genera dist/
 npm run lint     # revisa el código con Oxlint
 npx vitest run   # pruebas automáticas
+npm run build:portable  # genera dist-portable/OrbitHealth.html (un solo archivo)
 ```
+
+## Instalación
+
+La app se puede instalar como PWA (Edge en Windows, Safari en iPad) o usar como un solo archivo `OrbitHealth.html`, y funciona sin conexión. Los pasos para el usuario y para el equipo están en [docs/INSTALACION.md](docs/INSTALACION.md). Aún no hay un sitio publicado: dónde publicar está pendiente de decidir.
 
 ## Documentación y decisiones
 

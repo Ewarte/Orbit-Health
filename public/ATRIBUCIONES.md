@@ -2,7 +2,7 @@
 
 ## Modelo anatómico (Versión B del holograma)
 
-Archivo: `public/anatomia.glb`
+Archivo: `src/assets/anatomia.glb`
 
 - Datos de origen: **BodyParts3D**, © The Database Center for Life Science (DBCLS), Japón.
 - Licencia: Creative Commons Attribution 4.0 International (CC BY 4.0), según la página oficial de licencia:

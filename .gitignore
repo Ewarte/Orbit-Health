@@ -27,3 +27,4 @@ dist-ssr
 .remember/
 .superpowers/
 .vite/
+dist-portable
