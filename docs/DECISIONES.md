@@ -55,7 +55,10 @@ Registro de las decisiones tomadas del 14 al 15 de noviembre de 2026, con el mot
 - **Decisión:** app web que se abre desde una carpeta sin instalar nada, e instalable como PWA donde se permita. Todo funciona sin internet: fuentes tipográficas y modelos 3D viajan dentro del paquete, sin CDN.
 - **Por qué:** en Artemis II se usó un paquete interactivo en HTML, JS y CSS abierto en el navegador desde una carpeta. En la estación no hay tienda de apps y, según una página interna de NASA (vista solo como resumen de buscador), se recomiendan apps web.
 - **Evidencia:** [INVESTIGACION-TABLETS.md](INVESTIGACION-TABLETS.md).
-- **Pendiente:** el manifiesto y el service worker de la PWA.
+- **Implementado:** manifiesto e íconos, service worker propio (plugin de Vite en `scripts/pwaPlugin.ts`, sin dependencias nuevas) que precachea todos los archivos del build y responde sin conexión, y versión portátil de un solo archivo (`npm run build:portable` genera `dist-portable/OrbitHealth.html`). Probado sin conexión en Chromium. Pasos de uso: [INSTALACION.md](INSTALACION.md).
+- **Límite conocido:** en iPad no se puede abrir un archivo local; allí se usa la PWA. La instalación en Surface e iPad reales aún no se probó.
+- **Publicación:** Vercel, en https://orbit-health-six.vercel.app/ (la administra otra persona del equipo). `vercel.json` sirve `sw.js` y el manifiesto sin caché. Ver [INSTALACION.md](INSTALACION.md).
+- **Pendiente:** publicar una versión que incluya la PWA y probar la instalación en una tablet real.
 
 ### 7. Diseño para tablet en horizontal
 - **Decisión:** diseño «horizontal primero» (1180×820 y 1368×912; mínimo 1024), botones de al menos 44 px para uso con guantes.
@@ -63,7 +66,7 @@ Registro de las decisiones tomadas del 14 al 15 de noviembre de 2026, con el mot
 - **Evidencia:** [INVESTIGACION-TABLETS.md](INVESTIGACION-TABLETS.md).
 
 ### 8. Holograma: un solo modelo con zoom a los órganos
-- **Decisión:** un solo modelo, `public/anatomia.glb`. Vista general con su piel dibujada como silueta de alambre translúcida y, al elegir una zona o un órgano, zoom suave a los órganos y huesos reales.
+- **Decisión:** un solo modelo, `src/assets/anatomia.glb`. Vista general con su piel dibujada como silueta de alambre translúcida y, al elegir una zona o un órgano, zoom suave a los órganos y huesos reales.
 - **Por qué:** el reto sugiere una figura humana en la que cada parte se pueda tocar ([RETO.md](RETO.md), Objectives). La vista general da el panorama; el zoom muestra el órgano concreto.
 - **Por qué un solo modelo:** con la silueta anterior (`humano.glb`, brazos abiertos) el esqueleto de BodyParts3D (brazos pegados al cuerpo) quedaba superpuesto sin relación. Usar la piel del mismo modelo hace coincidir silueta, órganos y huesos. `humano.glb` se retiró.
 - **Licencia:** BodyParts3D, © The Database Center for Life Science, **CC BY 4.0** según su página oficial: gratuito, exige atribución, que se muestra bajo el holograma.
@@ -92,7 +95,7 @@ Registro de las decisiones tomadas del 14 al 15 de noviembre de 2026, con el mot
 ## Pendientes conocidos
 1. Revisión médica de umbrales y guías (punto 3).
 2. Vista técnica para el médico (punto 4).
-3. PWA instalable (punto 6).
+3. Publicar en Vercel la versión con la PWA y probar la instalación en una tablet real (punto 6).
 4. Integración con sensores (la propia NASA pide sensores pequeños e inalámbricos, [INVESTIGACION-NASA.md §1.3](INVESTIGACION-NASA.md)).
 5. Abrir la pestaña *Resources* del reto en un navegador: desde la PC de desarrollo no se pudo (error de certificado).
 6. Probar en una tablet real.
