@@ -4,6 +4,19 @@ import { worstStatus } from '../../lib/status'
 import type { Indicator, Mission, Notice, Status, Zone, ZoneId } from '../../types'
 import { IndicatorTile } from './IndicatorTile'
 import { Holograma3D } from '../health/Holograma3D'
+import { HologramaAnatomico } from '../health/HologramaAnatomico'
+import { useI18n } from '../../lib/useI18n'
+
+type HoloVersion = 'A' | 'B'
+const HOLO_STORAGE_KEY = 'orbit_health_holo_version'
+
+function readHoloVersion(): HoloVersion {
+  try {
+    return localStorage.getItem(HOLO_STORAGE_KEY) === 'B' ? 'B' : 'A'
+  } catch {
+    return 'A'
+  }
+}
 
 interface Props {
   mission: Mission
@@ -21,6 +34,18 @@ export function DashboardPage({ mission, zones, indicators, notices, onGuidance 
     const ranked = [...zones].sort((a, b) => rank(zoneStatus(b.id)) - rank(zoneStatus(a.id)))
     return ranked[0]?.id ?? 'head'
   })
+
+  const { t } = useI18n()
+  const [holoVersion, setHoloVersion] = useState<HoloVersion>(readHoloVersion)
+
+  function chooseHoloVersion(version: HoloVersion) {
+    setHoloVersion(version)
+    try {
+      localStorage.setItem(HOLO_STORAGE_KEY, version)
+    } catch {
+      // Sin almacenamiento: la elección vale mientras la app esté abierta.
+    }
+  }
 
   const [viewMode, setViewMode] = useState<'dynamic' | 'grid'>('dynamic')
 
@@ -76,13 +101,35 @@ export function DashboardPage({ mission, zones, indicators, notices, onGuidance 
       </header>
 
       {/* Escenario Central: Holograma 3D con Nubes Dinámicas alrededor del Cuerpo (Contenedor calibrado y elegante) */}
-      <section aria-label="Holograma 3D Interactivo" className="mx-auto w-full max-w-3xl lg:max-w-4xl">
-        <Holograma3D
-          selectedZone={selected}
-          onSelectZone={setSelected}
-          zonesStatus={figureZones}
-          indicators={indicators}
-        />
+      <section aria-label={t('holo.sectionLabel')} className="mx-auto w-full max-w-3xl space-y-3 lg:max-w-4xl">
+        <div role="group" aria-label={t('holo.version.label')} className="flex justify-center gap-2">
+          {(['A', 'B'] as const).map((version) => {
+            const on = holoVersion === version
+            return (
+              <button
+                key={version}
+                type="button"
+                aria-pressed={on}
+                onClick={() => chooseHoloVersion(version)}
+                className={`flex min-h-[44px] min-w-[44px] flex-col items-center justify-center rounded-xl border px-5 text-sm font-semibold transition-colors ${
+                  on
+                    ? 'border-cyan-400/70 bg-cyan-950/80 text-cyan-100'
+                    : 'border-edge/60 bg-panel/40 text-mute hover:text-text'
+                }`}
+              >
+                <span>{t(version === 'A' ? 'holo.version.a' : 'holo.version.b')}</span>
+                <span className="text-[10px] font-normal opacity-70">
+                  {t(version === 'A' ? 'holo.version.aHint' : 'holo.version.bHint')}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+        {holoVersion === 'A' ? (
+          <Holograma3D selectedZone={selected} onSelectZone={setSelected} zonesStatus={figureZones} indicators={indicators} />
+        ) : (
+          <HologramaAnatomico selectedZone={selected} onSelectZone={setSelected} zonesStatus={figureZones} indicators={indicators} />
+        )}
       </section>
 
       {/* Modo Cuadrícula de Métricas Completa (Opcional bajo demanda) */}
