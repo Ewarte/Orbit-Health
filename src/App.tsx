@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { localizePlace } from './lib/i18n'
+import { useI18n } from './lib/useI18n'
 import { DashboardPage } from './components/dashboard/DashboardPage'
 import { AppShell, type NavItem } from './components/layout/AppShell'
 import { indicators, mission, notices, zones } from './data/mock'
@@ -6,21 +8,15 @@ import { DailyCheckPage } from './features/measurements/DailyCheckPage'
 import type { DailyMetrics } from './features/measurements/dailyCheckTypes'
 import { evaluateDailyMetrics } from './features/evaluation/healthEngine'
 import { GuidancePage } from './features/guidance/GuidancePage'
-import { actionGuides } from './data/actionGuides'
 import { MissionPage } from './features/mission/MissionPage'
 import { RoutinePage } from './features/mission/RoutinePage'
 import { TrendsPage } from './features/trends/TrendsPage'
 
-const nav: NavItem[] = [
-  { id: 'today', label: 'Today', ready: true },
-  { id: 'check', label: 'Daily check', ready: true },
-  { id: 'trends', label: 'Trends', ready: true },
-  { id: 'guidance', label: 'Guidance', ready: true },
-  { id: 'routine', label: 'Routine', ready: true },
-  { id: 'mission', label: 'Mission', ready: true },
-]
+const navIds = ['today', 'check', 'trends', 'guidance', 'routine', 'mission'] as const
 
 export default function App() {
+  const { t, lang } = useI18n()
+  const nav: NavItem[] = navIds.map((id) => ({ id, label: t(`nav.${id}`), ready: true }))
   const [current, setCurrent] = useState('check')
   const [missionState, setMissionState] = useState(() => {
     try {
@@ -37,25 +33,24 @@ export default function App() {
     }
     return { bloodPressureSys: 128, bloodPressureDia: 82, heartRate: 64, bloodSugar: 96, bodyTemperature: 36.7, sleepHours: 5.2, mood: 'Good' }
   })
+  const missionView = { ...missionState, place: localizePlace(missionState.place, lang) }
   const liveIndicators = indicators.map((base) => evaluateDailyMetrics(liveMetrics).find((live) => live.id === base.id) ?? base)
 
   return (
     <AppShell nav={nav} current={current} onNavigate={setCurrent}>
       {current === 'today' ? (
-        <DashboardPage mission={missionState} zones={zones} indicators={liveIndicators} notices={notices} onGuidance={() => setCurrent('guidance')} />
+        <DashboardPage mission={missionView} zones={zones} indicators={liveIndicators} notices={notices} onGuidance={() => setCurrent('guidance')} />
       ) : current === 'check' ? (
-        <DailyCheckPage mission={missionState} onNavigate={setCurrent} onComplete={setLiveMetrics} />
+        <DailyCheckPage mission={missionView} onNavigate={setCurrent} onComplete={setLiveMetrics} />
       ) : current === 'trends' ? (
-        <TrendsPage mission={missionState} onNavigate={setCurrent} />
+        <TrendsPage mission={missionView} onNavigate={setCurrent} />
       ) : current === 'guidance' ? (
-        <GuidancePage notices={notices} guides={actionGuides} />
+        <GuidancePage indicators={liveIndicators} />
       ) : current === 'routine' ? (
         <RoutinePage />
       ) : current === 'mission' ? (
-        <MissionPage mission={missionState} onSave={(nextMission) => { setMissionState(nextMission); localStorage.setItem('orbit_health_mission_config', JSON.stringify(nextMission)) }} />
-      ) : (
-        <RoutinePage />
-      )}
+        <MissionPage key={lang} mission={missionView} onSave={(nextMission) => { setMissionState(nextMission); localStorage.setItem('orbit_health_mission_config', JSON.stringify(nextMission)) }} />
+      ) : null}
     </AppShell>
   )
 }
