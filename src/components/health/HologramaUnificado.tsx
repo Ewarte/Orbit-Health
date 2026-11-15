@@ -136,7 +136,8 @@ function useLayout(anatomy: THREE.Object3D): Layout {
 interface ModelProps {
   layout: Layout
   anatomy: THREE.Object3D
-  selectedZone: ZoneId
+  /** null = vista general, sin zona elegida. */
+  selectedZone: ZoneId | null
   view: View
   zonesStatus?: Record<ZoneId, Status | undefined>
   onSelectZone: (zone: ZoneId) => void
@@ -144,7 +145,7 @@ interface ModelProps {
 }
 
 /** Asigna el material de alambre a la piel y colorea cada vértice según su zona. */
-function paintSkin(skin: THREE.Mesh, material: THREE.Material, zones: Uint8Array, selected: ZoneId) {
+function paintSkin(skin: THREE.Mesh, material: THREE.Material, zones: Uint8Array, selected: ZoneId | null) {
   const ids = ZONE_META.map((z) => z.id)
   skin.material = material
   let attr = skin.geometry.attributes.color as THREE.BufferAttribute | undefined
@@ -154,7 +155,8 @@ function paintSkin(skin: THREE.Mesh, material: THREE.Material, zones: Uint8Array
   }
   const colors = attr.array as Float32Array
   for (let i = 0; i < zones.length; i++) {
-    const on = isZoneLit(selected, ids[zones[i]])
+    // En vista general (sin zona elegida) no se resalta nada.
+    const on = selected !== null && isZoneLit(selected, ids[zones[i]])
     colors[i * 3] = on ? 1.0 : 0.1
     colors[i * 3 + 1] = on ? 0.12 : 0.8
     colors[i * 3 + 2] = on ? 0.3 : 0.95
@@ -301,7 +303,7 @@ function Model({ layout, anatomy, selectedZone, view, zonesStatus, onSelectZone,
       material.color.copy(base)
       material.emissive.copy(base)
       material.emissiveIntensity = view.organ === mesh.name ? 0.75 : 0.3
-      setTarget(mesh.name, meshOpacity(mesh.name, selectedZone, view.zoomed, view.organ), (v) => {
+      setTarget(mesh.name, meshOpacity(mesh.name, selectedZone ?? 'body', view.zoomed, view.organ), (v) => {
         const wasTransparent = material.transparent
         mesh.visible = v > 0.003
         material.opacity = v
@@ -335,7 +337,7 @@ function Model({ layout, anatomy, selectedZone, view, zonesStatus, onSelectZone,
       const obj = hit.object as THREE.Mesh
       if (obj === skin) continue
       // Las mallas ocultas o casi transparentes no se pueden tocar.
-      const solid = obj.visible && meshOpacity(obj.name, selectedZone, view.zoomed, view.organ) >= 0.25
+      const solid = obj.visible && meshOpacity(obj.name, selectedZone ?? 'body', view.zoomed, view.organ) >= 0.25
       if (solid) return { organ: obj.name }
     }
     // ...y si no hay ninguno, la zona de la piel.
@@ -481,7 +483,8 @@ function CameraRig({ goal, controlsRef }: { goal: Goal; controlsRef: RefObject<C
 /* ─── Escena ─── */
 
 interface SceneProps {
-  selectedZone: ZoneId
+  /** null = vista general, sin zona elegida. */
+  selectedZone: ZoneId | null
   view: View
   zonesStatus?: Record<ZoneId, Status | undefined>
   autoRotate: boolean
@@ -517,7 +520,7 @@ function Scene({ selectedZone, view, zonesStatus, autoRotate, onSelectZone, onSe
       const b = layout.boxes.get(view.organ)
       if (b) return { box: b, margin: 1.7, resetDir: false }
     }
-    if (view.zoomed && selectedZone !== 'body') {
+    if (view.zoomed && selectedZone && selectedZone !== 'body') {
       const boxes = meshesOfZone(selectedZone)
         .map((n) => layout.boxes.get(n))
         .filter((b): b is Box => !!b)
@@ -537,8 +540,8 @@ function Scene({ selectedZone, view, zonesStatus, autoRotate, onSelectZone, onSe
   }, [layout, view.organ])
 
   // La tarjeta de lecturas mide ~220 px; con zoom se corre la imagen la mitad hacia el lado libre.
-  const cloudSide = CLOUD_POSITIONS[selectedZone].align
-  const shift = view.zoomed && selectedZone !== 'body' ? (cloudSide === 'left' ? 120 : -120) : 0
+  const cloudSide = selectedZone ? CLOUD_POSITIONS[selectedZone].align : 'left'
+  const shift = view.zoomed && selectedZone && selectedZone !== 'body' ? (cloudSide === 'left' ? 120 : -120) : 0
 
   return (
     <>
@@ -607,6 +610,9 @@ export function HologramaUnificado({ selectedZone = 'heart', onSelectZone, zones
     setView((v) => ({ ...v, zoomed: true, organ: null }))
   }
 
+  // En vista general no hay zona elegida: ningún botón marcado, nada resaltado, sin tarjeta.
+  const shownZone: ZoneId | null = view.zoomed ? selectedZone : null
+
   const handleSelectZone = useCallback(
     (zone: ZoneId) => {
       setView((v) => ({ ...v, zoomed: true, organ: null }))
@@ -627,7 +633,7 @@ export function HologramaUnificado({ selectedZone = 'heart', onSelectZone, zones
 
   return (
     <HoloShell
-      selectedZone={selectedZone}
+      selectedZone={shownZone}
       onSelectZone={handleSelectZone}
       zonesStatus={zonesStatus}
       indicators={indicators}
@@ -655,7 +661,7 @@ export function HologramaUnificado({ selectedZone = 'heart', onSelectZone, zones
         >
           <Suspense fallback={null}>
             <Scene
-              selectedZone={selectedZone}
+              selectedZone={shownZone}
               view={view}
               zonesStatus={zonesStatus}
               autoRotate={autoRotate}

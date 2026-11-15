@@ -146,7 +146,8 @@ function StatCloud({
 }
 
 export interface HoloShellProps {
-  selectedZone: ZoneId
+  /** null = vista general: ningún botón de zona marcado ni tarjeta de lecturas. */
+  selectedZone: ZoneId | null
   onSelectZone: (zone: ZoneId) => void
   zonesStatus?: Record<ZoneId, Status | undefined>
   indicators?: Indicator[]
@@ -203,7 +204,7 @@ export function HoloShell({
       <div className="relative h-[440px] w-full sm:h-[480px] lg:h-[clamp(380px,calc(100dvh-324px),600px)]" role="group" aria-label={t('holo.canvasLabel')}>
         {indicators && indicators.length > 0 && (
           <div className="hidden md:block">
-            <ConnectingLines selected={selectedZone} centered={focused} />
+            {selectedZone && <ConnectingLines selected={selectedZone} centered={focused} />}
           </div>
         )}
         {children(autoRotate)}
@@ -246,7 +247,7 @@ export function HoloShell({
 
       <div className="z-10 mt-2 flex w-full flex-wrap items-center justify-between gap-x-3 font-mono text-[10px] text-cyan-300/60">
         <span>
-          {t('holo.zone').toUpperCase()}: {active ? t(active.nameKey).toUpperCase() : ''}
+          {t('holo.zone').toUpperCase()}: {active ? t(active.nameKey).toUpperCase() : t('holo.overview').toUpperCase()}
         </span>
         <span>{t('holo.hint')}</span>
       </div>
