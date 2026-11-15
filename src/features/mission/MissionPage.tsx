@@ -176,9 +176,9 @@ export function MissionPage({ mission, onSave }: Props) {
   }
 
   return (
-    <main className="min-w-0 px-4 py-6 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-3xl">
-        <header className="mb-6">
+    <main className="min-w-0 px-4 py-6 sm:px-6 lg:px-6 lg:py-5">
+      <div className="mx-auto max-w-[1400px]">
+        <header className="mb-4">
           <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-ok">
             <Satellite className="h-4 w-4" /> {t('mission.eyebrow')}
           </p>
@@ -186,6 +186,7 @@ export function MissionPage({ mission, onSave }: Props) {
           <p className="mt-2 text-mute">{t('mission.intro')}</p>
         </header>
 
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] lg:items-start">
         <section className="rounded-2xl border border-edge bg-panel p-5 sm:p-6">
           <fieldset className="m-0 border-0 p-0">
             <legend className="text-sm font-semibold text-text">{t('mission.environment')}</legend>
@@ -286,11 +287,14 @@ export function MissionPage({ mission, onSave }: Props) {
           )}
         </section>
 
+        <div className="space-y-4 [&>section]:mt-0">
         <MissionClock draft={draft} />
 
-        <div className="mt-4 flex items-start gap-3 rounded-xl border border-edge bg-rail p-4 text-sm text-mute">
+        <div className="flex items-start gap-3 rounded-xl border border-edge bg-rail p-4 text-sm text-mute">
           <WifiOff className="mt-0.5 h-4 w-4 shrink-0 text-watch" />
           <p className="m-0">{t('mission.offline')}</p>
+        </div>
+        </div>
         </div>
       </div>
     </main>

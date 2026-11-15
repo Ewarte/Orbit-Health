@@ -35,18 +35,18 @@ const cards: Card[] = [
 
 export function DailyMetricCards({ metrics, onSelect }: Props) {
   return (
-    <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-5 lg:gap-3">
       {cards.map(({ id, label, icon: Icon, value, unit, extra }) => (
-        <button key={id} type="button" onClick={() => onSelect(id)} className="group relative rounded-xl border border-edge bg-panel p-5 text-left transition-colors hover:border-ok hover:bg-edge">
+        <button key={id} type="button" onClick={() => onSelect(id)} className="group relative min-h-11 rounded-xl border border-edge bg-panel p-4 text-left lg:p-3.5 transition-colors hover:border-ok hover:bg-edge">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3">
               <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-notice text-ok"><Icon className="h-5 w-5" /></span>
               <span className="text-sm font-medium text-mute group-hover:text-text">{label}</span>
             </div>
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-notice text-ok"><Check className="h-3.5 w-3.5 stroke-[3]" /></span>
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-notice text-ok lg:hidden xl:flex"><Check className="h-3.5 w-3.5 stroke-[3]" /></span>
           </div>
           <div className="mt-4 flex items-baseline gap-1.5">
-            <span className="font-display text-2xl font-bold tracking-tight text-text sm:text-3xl">{value(metrics)}</span>
+            <span className="font-display text-2xl font-bold tracking-tight text-text sm:text-3xl lg:text-2xl">{value(metrics)}</span>
             {unit(metrics) && <span className="text-sm text-mute">{unit(metrics)}</span>}
           </div>
           {extra && <p className="mt-1 text-xs text-mute">{extra(metrics)}</p>}

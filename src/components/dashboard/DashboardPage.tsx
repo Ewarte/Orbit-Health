@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { NoticeCard } from '../../features/guidance/NoticeCard'
-import { worstStatus } from '../../lib/status'
+import { statusUi, worstStatus } from '../../lib/status'
 import type { Indicator, Mission, Notice, Status, Zone, ZoneId } from '../../types'
 import { IndicatorTile } from './IndicatorTile'
 import { Holograma3D } from '../health/Holograma3D'
@@ -49,12 +49,14 @@ export function DashboardPage({ mission, zones, indicators, notices, onGuidance 
 
   const [viewMode, setViewMode] = useState<'dynamic' | 'grid'>('dynamic')
 
+  const attention = indicators.filter((i) => i.status !== 'ok')
+
   const figureZones = Object.fromEntries(
     zones.map((z) => [z.id, zoneStatus(z.id)]),
   ) as Record<ZoneId, Status | undefined>
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 py-5 sm:px-6 space-y-5">
+    <div className="mx-auto w-full max-w-[1500px] space-y-3 px-4 py-4 sm:px-6 lg:px-5 lg:py-3">
       {/* Cabecera de la Misión y Selector de Telemetría */}
       <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
         <div>
@@ -65,12 +67,35 @@ export function DashboardPage({ mission, zones, indicators, notices, onGuidance 
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
+    <div role="group" aria-label={t('holo.version.label')} className="flex gap-2">
+      {(['A', 'B'] as const).map((version) => {
+        const on = holoVersion === version
+        return (
+          <button
+            key={version}
+            type="button"
+            aria-pressed={on}
+            onClick={() => chooseHoloVersion(version)}
+            className={`flex min-h-[44px] min-w-[44px] flex-col items-center justify-center rounded-xl border px-5 text-sm font-semibold transition-colors ${
+              on
+                ? 'border-cyan-400/70 bg-cyan-950/80 text-cyan-100'
+                : 'border-edge/60 bg-panel/40 text-mute hover:text-text'
+            }`}
+          >
+            <span>{t(version === 'A' ? 'holo.version.a' : 'holo.version.b')}</span>
+            <span className="text-[10px] font-normal opacity-70">
+              {t(version === 'A' ? 'holo.version.aHint' : 'holo.version.bHint')}
+            </span>
+          </button>
+        )
+      })}
+    </div>
           {/* Conmutador de vista de telemetría */}
           <div className="flex items-center rounded-xl border border-edge/60 bg-panel/50 p-1 text-xs">
             <button
               type="button"
               onClick={() => setViewMode('dynamic')}
-              className={`flex items-center gap-1.5 rounded-lg px-3 py-1 font-medium transition-all ${
+              className={`flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-1 font-medium transition-all ${
                 viewMode === 'dynamic'
                   ? 'border border-cyan-400/50 bg-cyan-950/80 text-cyan-200 shadow-sm'
                   : 'text-mute hover:text-text'
@@ -82,7 +107,7 @@ export function DashboardPage({ mission, zones, indicators, notices, onGuidance 
             <button
               type="button"
               onClick={() => setViewMode('grid')}
-              className={`flex items-center gap-1.5 rounded-lg px-3 py-1 font-medium transition-all ${
+              className={`flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-1 font-medium transition-all ${
                 viewMode === 'grid'
                   ? 'border border-cyan-400/50 bg-cyan-950/80 text-cyan-200 shadow-sm'
                   : 'text-mute hover:text-text'
@@ -93,44 +118,62 @@ export function DashboardPage({ mission, zones, indicators, notices, onGuidance 
             </button>
           </div>
 
-          <div className="flex items-center gap-2 rounded-full border border-edge/60 bg-panel/40 px-3.5 py-1.5 text-xs backdrop-blur-sm">
+          <div className="flex lg:max-xl:hidden items-center gap-2 rounded-full border border-edge/60 bg-panel/40 px-3.5 py-1.5 text-xs backdrop-blur-sm">
             <span className="h-1.5 w-1.5 rounded-full bg-ok animate-pulse" />
             <span className="font-mono uppercase tracking-wider text-ok">Live Telemetry</span>
           </div>
         </div>
       </header>
 
-      {/* Escenario Central: Holograma 3D con Nubes Dinámicas alrededor del Cuerpo (Contenedor calibrado y elegante) */}
-      <section aria-label={t('holo.sectionLabel')} className="mx-auto w-full max-w-3xl space-y-3 lg:max-w-4xl">
-        <div role="group" aria-label={t('holo.version.label')} className="flex justify-center gap-2">
-          {(['A', 'B'] as const).map((version) => {
-            const on = holoVersion === version
-            return (
-              <button
-                key={version}
-                type="button"
-                aria-pressed={on}
-                onClick={() => chooseHoloVersion(version)}
-                className={`flex min-h-[44px] min-w-[44px] flex-col items-center justify-center rounded-xl border px-5 text-sm font-semibold transition-colors ${
-                  on
-                    ? 'border-cyan-400/70 bg-cyan-950/80 text-cyan-100'
-                    : 'border-edge/60 bg-panel/40 text-mute hover:text-text'
-                }`}
-              >
-                <span>{t(version === 'A' ? 'holo.version.a' : 'holo.version.b')}</span>
-                <span className="text-[10px] font-normal opacity-70">
-                  {t(version === 'A' ? 'holo.version.aHint' : 'holo.version.bHint')}
-                </span>
-              </button>
-            )
-          })}
-        </div>
-        {holoVersion === 'A' ? (
-          <Holograma3D selectedZone={selected} onSelectZone={setSelected} zonesStatus={figureZones} indicators={indicators} />
-        ) : (
-          <HologramaAnatomico selectedZone={selected} onSelectZone={setSelected} zonesStatus={figureZones} indicators={indicators} />
-        )}
-      </section>
+      {/* En horizontal: holograma en la columna principal y resumen al lado. En vertical y móvil: apilado. */}
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start xl:grid-cols-[minmax(0,1fr)_380px]">
+        <section aria-label={t('holo.sectionLabel')} className="mx-auto w-full min-w-0 max-w-3xl lg:max-w-none">
+          {holoVersion === 'A' ? (
+            <Holograma3D selectedZone={selected} onSelectZone={setSelected} zonesStatus={figureZones} indicators={indicators} />
+          ) : (
+            <HologramaAnatomico selectedZone={selected} onSelectZone={setSelected} zonesStatus={figureZones} indicators={indicators} />
+          )}
+        </section>
+
+        <aside aria-label={t('nav.today')} className="min-w-0 space-y-3 [&_section]:mt-0">
+          {attention.length > 0 && (
+            <section aria-label="Indicadores en atención" className="rounded-xl border border-edge bg-panel p-3">
+              <ul className="m-0 grid list-none gap-2 p-0">
+                {attention.map((indicator) => {
+                  const ui = statusUi[indicator.status]
+                  return (
+                    <li key={indicator.id}>
+                      <button
+                        type="button"
+                        onClick={() => setSelected(indicator.zone)}
+                        aria-pressed={indicator.zone === selected}
+                        className={`flex min-h-12 w-full cursor-pointer items-center justify-between gap-3 rounded-lg border border-l-4 border-edge bg-bg px-3 py-2 text-left ${ui.border.replace('border-t-', 'border-l-')}`}
+                      >
+                        <span className="min-w-0">
+                          <span className="block truncate text-sm font-medium text-mute">{indicator.name}</span>
+                          <span className={`block text-sm font-semibold ${ui.text}`}>{ui.label}</span>
+                        </span>
+                        <span className="shrink-0 font-display text-xl font-semibold tabular-nums">
+                          {indicator.value} <span className="font-sans text-xs font-normal text-mute">{indicator.unit}</span>
+                        </span>
+                      </button>
+                    </li>
+                  )
+                })}
+              </ul>
+            </section>
+          )}
+
+          {/* Notificaciones y avisos de guía médica */}
+          {notices.length > 0 && (
+            <section aria-label="Avisos Médicos" className="space-y-3">
+              {notices.map((notice) => (
+                <NoticeCard key={notice.indicatorId} notice={notice} onGuidance={onGuidance} />
+              ))}
+            </section>
+          )}
+        </aside>
+      </div>
 
       {/* Modo Cuadrícula de Métricas Completa (Opcional bajo demanda) */}
       {viewMode === 'grid' && (
@@ -150,15 +193,6 @@ export function DashboardPage({ mission, zones, indicators, notices, onGuidance 
               </li>
             ))}
           </ul>
-        </section>
-      )}
-
-      {/* Notificaciones y avisos de guía médica */}
-      {notices.length > 0 && (
-        <section aria-label="Avisos Médicos" className="space-y-3">
-          {notices.map((notice) => (
-            <NoticeCard key={notice.indicatorId} notice={notice} onGuidance={onGuidance} />
-          ))}
         </section>
       )}
     </div>

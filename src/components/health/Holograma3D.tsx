@@ -4,7 +4,7 @@ import { Center, OrbitControls, useGLTF } from '@react-three/drei'
 import * as THREE from 'three'
 import type { Indicator, Status, ZoneId } from '../../types'
 import { HoloShell } from './HoloShell'
-import { HIGHLIGHT, ZONE_META, getStatusColor } from './holoZonas'
+import { HIGHLIGHT, ZONE_META, getStatusColor, getVertexZone, isZoneLit } from './holoZonas'
 
 /* ═══════════════════════════════════════════════════════════════════════
    VERSIÓN A: modelo de malla de alambre (humano.glb) con zonas más fieles.
@@ -16,33 +16,13 @@ import { HIGHLIGHT, ZONE_META, getStatusColor } from './holoZonas'
  * La malla es de alambre y translúcida, así que se ve a través del cuerpo.
  */
 const BEACON_POS: Record<ZoneId, [number, number, number]> = {
-  head: [0, 0.86, 0],
+  // La cabeza lleva la baliza a un lado y no sobre el rostro, para no taparlo.
+  head: [0.2, 0.84, 0],
   heart: [0.05, 0.48, 0],
   metabolism: [0, 0.1, 0],
-  body: [0.34, 0.25, 0],
+  // Cuerpo entero: sobre la piel, en el costado del tronco.
+  body: [0.18, 0.3, 0],
   legs: [0.1, -0.55, 0],
-}
-
-/**
- * Reparte cada vértice del modelo en una zona. En humano.glb (altura total 1,96):
- *  - h: altura (de -0,98 en los pies a +0,98 en la cabeza); x: lado.
- *  - Los brazos cuelgan en diagonal hasta h = -0,15 y se separan del tronco a partir de |x| = 0,21.
- *
- * Criterio:
- *  - cabeza: por encima del cuello (h > 0,74).
- *  - brazos y piel → «cuerpo»: fuera del tronco (|x| > 0,21) mientras haya brazos (h > -0,2).
- *  - pecho (corazón y pulmones): de los hombros a la base de las costillas (0,26 < h ≤ 0,74).
- *  - abdomen (metabolismo): de las costillas a la entrepierna (-0,08 < h ≤ 0,26).
- *  - piernas: de la entrepierna hacia abajo. Los pies cuentan como parte de las piernas: la app
- *    no tiene una zona de pies y separarlos mezclaría su estado con el de otra zona.
- */
-function getVertexZone(x: number, h: number): ZoneId {
-  const ax = Math.abs(x)
-  if (h > 0.74) return 'head'
-  if (h > -0.2 && ax > 0.21) return 'body'
-  if (h > 0.26) return 'heart'
-  if (h > -0.08) return 'metabolism'
-  return 'legs'
 }
 
 function HumanModel({
@@ -84,10 +64,9 @@ function HumanModel({
     return maps
   }, [scene])
 
-  // Colorea la propia malla: la zona medida en rojo y el resto en cian.
+  // Colorea la propia malla: la zona medida en rojo y el resto en cian. «Cuerpo entero» enciende toda la malla.
   useEffect(() => {
     const ids = ZONE_META.map((z) => z.id)
-    const selectedIndex = ids.indexOf(selectedZone)
     zoneMaps.forEach((map, mesh) => {
       mesh.material = holoMaterial
       const geometry = mesh.geometry
@@ -99,7 +78,7 @@ function HumanModel({
       }
       const colors = colorAttr.array as Float32Array
       for (let i = 0; i < count; i++) {
-        const on = map[i] === selectedIndex
+        const on = isZoneLit(selectedZone, ids[map[i]])
         colors[i * 3] = on ? 1.0 : 0.0
         colors[i * 3 + 1] = on ? 0.12 : 0.9
         colors[i * 3 + 2] = on ? 0.3 : 1.0

@@ -38,8 +38,8 @@ export function DailyCheckPage({ mission, onComplete, onNavigate }: Props) {
   }
 
   return (
-    <main className="min-w-0 px-4 py-5 sm:px-6 sm:py-8 lg:px-8">
-      <div className="mx-auto max-w-5xl">
+    <main className="min-w-0 px-4 py-5 sm:px-6 sm:py-8 lg:px-6 lg:py-5">
+      <div className="mx-auto max-w-[1400px]">
         {check.notification && (
           <Notification
             message={check.notification}
@@ -47,7 +47,7 @@ export function DailyCheckPage({ mission, onComplete, onNavigate }: Props) {
           />
         )}
 
-        <header className="mb-6 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
+        <header className="mb-4 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
           <h1 className="font-display text-3xl font-semibold tracking-tight text-text sm:text-4xl">
             Daily check
           </h1>
@@ -67,15 +67,15 @@ export function DailyCheckPage({ mission, onComplete, onNavigate }: Props) {
           onTrends={onNavigate ? () => onNavigate('trends') : undefined}
         />
 
-        <section aria-label="Health check metrics" className="mb-6">
-          <div className="mb-4 flex items-center justify-between">
+        <section aria-label="Health check metrics" className="mb-4">
+          <div className="mb-3 flex items-center justify-between">
             <h2 className="font-display text-xl font-semibold tracking-wide text-text">
               Check your health
             </h2>
             <button
               type="button"
               onClick={() => openAssistant()}
-              className="hidden items-center gap-1.5 rounded-md px-2.5 py-2 text-xs font-medium text-mute hover:text-text sm:inline-flex"
+              className="hidden min-h-11 items-center gap-1.5 rounded-md px-3 py-2 text-xs font-medium text-mute hover:text-text sm:inline-flex"
             >
               <RotateCcw className="h-3.5 w-3.5 text-ok" /> Modificar valores
             </button>
@@ -84,7 +84,7 @@ export function DailyCheckPage({ mission, onComplete, onNavigate }: Props) {
           <DailyMetricCards metrics={check.metrics} onSelect={openAssistant} />
         </section>
 
-        <section className="mt-8 flex flex-col gap-3 sm:flex-row">
+        <section className="mt-5 flex flex-col gap-3 sm:flex-row">
           <button
             type="button"
             onClick={check.saveAll}
@@ -181,7 +181,7 @@ function StatusHero({
   return (
     <section
       aria-label="Daily check status"
-      className="relative mb-8 overflow-hidden rounded-2xl border border-edge bg-panel p-5 shadow-lg sm:p-6"
+      className="relative mb-5 overflow-hidden rounded-2xl border border-edge bg-panel p-4 shadow-lg sm:p-5"
     >
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
@@ -208,7 +208,7 @@ function StatusHero({
           <button
             type="button"
             onClick={onHistory}
-            className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-edge bg-rail px-3.5 py-1.5 text-xs font-medium text-mute hover:text-text"
+            className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-edge bg-rail px-3.5 py-1.5 text-xs font-medium text-mute hover:text-text"
           >
             <History className="h-3.5 w-3.5 text-ok" /> Historial ({recordCount})
           </button>
@@ -217,7 +217,7 @@ function StatusHero({
             <button
               type="button"
               onClick={onTrends}
-              className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-edge bg-rail px-3.5 py-1.5 text-xs font-medium text-mute hover:text-text"
+              className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-edge bg-rail px-3.5 py-1.5 text-xs font-medium text-mute hover:text-text"
             >
               <TrendingUp className="h-3.5 w-3.5 text-ok" /> Tendencias
             </button>
@@ -226,7 +226,7 @@ function StatusHero({
           <button
             type="button"
             onClick={onEdit}
-            className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-edge bg-panel px-3 py-1.5 text-xs font-medium text-mute hover:text-text sm:hidden"
+            className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-edge bg-panel px-3 py-1.5 text-xs font-medium text-mute hover:text-text sm:hidden"
           >
             <SlidersHorizontal className="h-3.5 w-3.5" /> Editar
           </button>

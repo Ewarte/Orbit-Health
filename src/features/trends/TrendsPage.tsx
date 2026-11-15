@@ -410,10 +410,10 @@ export function TrendsPage({ mission, onNavigate }: Props) {
   const trendResult = evaluateTrend(focusedValues, activeMetricDef.nominalMin, activeMetricDef.nominalMax)
 
   return (
-    <main className="min-w-0 px-4 py-5 sm:px-6 sm:py-8 lg:px-8">
-      <div className="mx-auto max-w-6xl">
+    <main className="min-w-0 px-4 py-5 sm:px-6 sm:py-8 lg:px-6 lg:py-5">
+      <div className="mx-auto max-w-[1400px]">
         {/* Cabecera Principal */}
-        <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <header className="mb-4 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
           <div>
             <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#5cc98b]">
               <Sparkles className="h-3.5 w-3.5" />
@@ -427,12 +427,13 @@ export function TrendsPage({ mission, onNavigate }: Props) {
             </p>
           </div>
 
+          <div className="flex flex-wrap items-center gap-2">
           {onNavigate && (
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => onNavigate('check')}
-                className="inline-flex items-center gap-2 rounded-xl border border-edge bg-panel px-4 py-2.5 text-sm font-semibold text-text transition-colors hover:border-[#5cc98b]/50 hover:bg-[#1c3f5e] cursor-pointer"
+                className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-edge bg-panel px-4 py-2.5 text-sm font-semibold text-text transition-colors hover:border-[#5cc98b]/50 hover:bg-[#1c3f5e] cursor-pointer"
               >
                 <Clock className="h-4 w-4 text-[#5cc98b]" />
                 <span>Ir al Chequeo Diario</span>
@@ -442,17 +443,18 @@ export function TrendsPage({ mission, onNavigate }: Props) {
           <button
             type="button"
             onClick={loadSimulatedMission}
-            className="inline-flex items-center gap-2 rounded-xl border border-ok bg-notice px-4 py-2.5 text-sm font-semibold text-ok hover:brightness-110"
+            className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-ok bg-notice px-4 py-2.5 text-sm font-semibold text-ok hover:brightness-110"
           >
             <Database className="h-4 w-4" />
             {missionLoaded ? 'Recargar misión simulada (47 días)' : 'Cargar misión simulada (47 días)'}
           </button>
+          </div>
         </header>
 
         {/* BARRA DE CONTROL */}
         <section
           aria-label="Controles de tendencias"
-          className="mb-8 rounded-2xl border border-edge bg-[#14283d] p-4 sm:p-5 shadow-lg shadow-black/20"
+          className="mb-5 rounded-2xl border border-edge bg-[#14283d] p-4 sm:p-5 shadow-lg shadow-black/20"
         >
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             {/* 1. SELECCIONAR PERÍODO (Últimos 7 días por defecto) */}
@@ -465,7 +467,7 @@ export function TrendsPage({ mission, onNavigate }: Props) {
                 <button
                   type="button"
                   onClick={() => setTimeRange('7d')}
-                  className={`relative rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
+                  className={`relative min-h-11 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
                     timeRange === '7d'
                       ? 'bg-[#184840] text-[#5cc98b] shadow-sm ring-1 ring-[#5cc98b]/40'
                       : 'text-mute hover:text-text'
@@ -480,7 +482,7 @@ export function TrendsPage({ mission, onNavigate }: Props) {
                 <button
                   type="button"
                   onClick={() => setTimeRange('14d')}
-                  className={`rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
+                  className={`min-h-11 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
                     timeRange === '14d'
                       ? 'bg-[#184840] text-[#5cc98b] shadow-sm ring-1 ring-[#5cc98b]/40'
                       : 'text-mute hover:text-text'
@@ -492,7 +494,7 @@ export function TrendsPage({ mission, onNavigate }: Props) {
                 <button
                   type="button"
                   onClick={() => setTimeRange('30d')}
-                  className={`rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
+                  className={`min-h-11 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
                     timeRange === '30d'
                       ? 'bg-[#184840] text-[#5cc98b] shadow-sm ring-1 ring-[#5cc98b]/40'
                       : 'text-mute hover:text-text'
@@ -504,7 +506,7 @@ export function TrendsPage({ mission, onNavigate }: Props) {
                 <button
                   type="button"
                   onClick={() => setTimeRange('all')}
-                  className={`rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
+                  className={`min-h-11 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
                     timeRange === 'all'
                       ? 'bg-[#184840] text-[#5cc98b] shadow-sm ring-1 ring-[#5cc98b]/40'
                       : 'text-mute hover:text-text'
@@ -526,7 +528,7 @@ export function TrendsPage({ mission, onNavigate }: Props) {
                 <button
                   type="button"
                   onClick={() => setSelectedMetric('all')}
-                  className={`inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
+                  className={`inline-flex min-h-11 items-center gap-1.5 rounded-xl border px-3.5 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
                     selectedMetric === 'all'
                       ? 'border-[#5cc98b] bg-[#184840] text-[#5cc98b] shadow-md shadow-[#5cc98b]/10'
                       : 'border-edge bg-panel/70 text-mute hover:border-text/40 hover:text-text'
@@ -539,7 +541,7 @@ export function TrendsPage({ mission, onNavigate }: Props) {
                 <button
                   type="button"
                   onClick={() => setShowFilterDrawer(!showFilterDrawer)}
-                  className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-colors cursor-pointer ${
+                  className={`inline-flex min-h-11 items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-colors cursor-pointer ${
                     showFilterDrawer
                       ? 'border-[#5cc98b] bg-[#184840] text-[#5cc98b]'
                       : 'border-edge bg-panel/70 text-mute hover:text-text'
@@ -603,7 +605,7 @@ export function TrendsPage({ mission, onNavigate }: Props) {
                       key={m.id}
                       type="button"
                       onClick={() => toggleMetricVisibility(m.id)}
-                      className={`flex items-center gap-2.5 rounded-lg border p-2 text-left text-xs transition-all cursor-pointer ${
+                      className={`flex min-h-11 items-center gap-2.5 rounded-lg border p-2 text-left text-xs transition-all cursor-pointer ${
                         isChecked
                           ? 'border-[#5cc98b]/60 bg-[#143734]/40 text-text'
                           : 'border-edge bg-panel/30 text-mute opacity-60 hover:opacity-100'
@@ -642,7 +644,7 @@ export function TrendsPage({ mission, onNavigate }: Props) {
               onClick={() => handleScroll('left')}
               aria-label="Métricas anteriores"
               title="Desplazar a la izquierda"
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-edge bg-panel text-mute transition-all hover:border-[#5cc98b]/50 hover:bg-[#184840] hover:text-[#5cc98b] active:scale-95 cursor-pointer"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-edge bg-panel text-mute transition-all hover:border-[#5cc98b]/50 hover:bg-[#184840] hover:text-[#5cc98b] active:scale-95 cursor-pointer"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
@@ -667,7 +669,7 @@ export function TrendsPage({ mission, onNavigate }: Props) {
                       setSelectedMetric(m.id)
                       setFocusedMetricId(m.id)
                     }}
-                    className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all cursor-pointer ${
+                    className={`inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all cursor-pointer ${
                       isSelected
                         ? 'border-[#5cc98b] bg-[#184840] text-text ring-1 ring-[#5cc98b]/50'
                         : 'border-edge bg-panel/50 text-mute hover:border-text/30 hover:text-text'
@@ -686,7 +688,7 @@ export function TrendsPage({ mission, onNavigate }: Props) {
               onClick={() => handleScroll('right')}
               aria-label="Métricas siguientes"
               title="Desplazar a la derecha"
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-edge bg-panel text-mute transition-all hover:border-[#5cc98b]/50 hover:bg-[#184840] hover:text-[#5cc98b] active:scale-95 cursor-pointer"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-edge bg-panel text-mute transition-all hover:border-[#5cc98b]/50 hover:bg-[#184840] hover:text-[#5cc98b] active:scale-95 cursor-pointer"
             >
               <ChevronRight className="h-4 w-4" />
             </button>
@@ -695,7 +697,7 @@ export function TrendsPage({ mission, onNavigate }: Props) {
 
         {/* VISTA ENFOCADA */}
         {selectedMetric !== 'all' && (
-          <section className="mb-8 space-y-6">
+          <section className="mb-6 space-y-4">
             <div className={`rounded-xl border p-4 text-sm ${trendResult.status === 'critical' ? 'border-act bg-notice text-act' : trendResult.status === 'warning' ? 'border-watch bg-notice text-watch' : 'border-ok bg-notice text-ok'}`}>
               <strong>Trend rule: </strong>{trendResult.message}
             </div>
@@ -747,8 +749,9 @@ export function TrendsPage({ mission, onNavigate }: Props) {
                 </div>
               </div>
 
+              <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_240px] lg:items-start lg:gap-5">
               {/* 4 KPIs */}
-              <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:order-2 lg:mt-5 lg:grid-cols-1">
                 <div className="rounded-xl border border-edge/60 bg-rail/60 p-3.5">
                   <span className="text-xs text-mute">Promedio ({timeRange})</span>
                   <p className="mt-1 font-display text-xl font-bold text-text">
@@ -780,13 +783,13 @@ export function TrendsPage({ mission, onNavigate }: Props) {
               </div>
 
               {/* GRÁFICO PRINCIPAL */}
-              <div className="mt-6">
-                <div className="mb-2 flex items-center justify-between text-xs text-mute">
+              <div className="mt-6 min-w-0 lg:order-1 lg:mt-5">
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-x-3 text-xs text-mute">
                   <span>Evolución diaria por día de misión ({filteredData[0]?.dateStr} — {filteredData[filteredData.length - 1]?.dateStr})</span>
                   <span className="text-[#5cc98b] font-medium">Banda verde: Margen nominal seguro NASA</span>
                 </div>
 
-                <div className="h-72 w-full rounded-xl border border-edge/70 bg-[#0c1e2f] p-3 sm:p-4">
+                <div className="h-72 w-full rounded-xl lg:h-[19rem] border border-edge/70 bg-[#0c1e2f] p-3 sm:p-4">
                   <ResponsiveContainer width="100%" height="100%">
                     {activeMetricDef.id === 'bp' ? (
                       <LineChart data={filteredData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
@@ -899,6 +902,7 @@ export function TrendsPage({ mission, onNavigate }: Props) {
                   </ResponsiveContainer>
                 </div>
               </div>
+              </div>
             </div>
           </section>
         )}
@@ -915,7 +919,7 @@ export function TrendsPage({ mission, onNavigate }: Props) {
               </span>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {METRICS_CATALOG.filter((m) => visibleMetrics[m.id]).map((metric) => {
                 const Icon = metric.icon
                 const stats = computeStats(metric.id)
@@ -1041,7 +1045,7 @@ export function TrendsPage({ mission, onNavigate }: Props) {
         )}
 
         {/* Protocolo de Evaluación Offline */}
-        <footer className="mt-10 rounded-2xl border border-edge/80 bg-panel/40 p-5 text-xs text-mute">
+        <footer className="mt-6 rounded-2xl border border-edge/80 bg-panel/40 p-5 text-xs text-mute">
           <div className="flex items-start gap-3">
             <Info className="h-5 w-5 shrink-0 text-[#5cc98b] mt-0.5" />
             <div>

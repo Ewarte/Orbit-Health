@@ -117,9 +117,9 @@ export function RoutinePage({ clock = localClock }: RoutinePageProps) {
   const taskLabel = (id: RoutineTaskId) => t(`routine.task.${id}` as MessageKey)
 
   return (
-    <main className="min-w-0 px-4 py-6 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-3xl">
-        <header className="mb-6">
+    <main className="min-w-0 px-4 py-6 sm:px-6 lg:px-6 lg:py-5">
+      <div className="mx-auto max-w-[1400px]">
+        <header className="mb-4">
           <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-ok">
             <Clock3 className="h-4 w-4" /> {t('routine.eyebrow')}
           </p>
@@ -148,6 +148,7 @@ export function RoutinePage({ clock = localClock }: RoutinePageProps) {
           </div>
         )}
 
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start">
         <section className="rounded-2xl border border-edge bg-panel p-4 sm:p-6">
           <div className="mb-4 flex items-center justify-between">
             <p className="m-0 text-sm text-mute">
@@ -205,7 +206,7 @@ export function RoutinePage({ clock = localClock }: RoutinePageProps) {
           </ul>
         </section>
 
-        <section className="mt-4 rounded-xl border border-edge bg-rail p-4 text-sm text-mute">
+        <section className="rounded-xl border border-edge bg-rail p-4 text-sm text-mute">
           <h2 className="m-0 text-sm font-semibold text-text">{t('routine.reminders.title')}</h2>
           <p className="mb-0 mt-1">{t('routine.reminders.note')}</p>
           {systemAlerts === 'default' && (
@@ -221,6 +222,7 @@ export function RoutinePage({ clock = localClock }: RoutinePageProps) {
           {systemAlerts === 'denied' && <p role="status" className="mb-0 mt-3 text-watch">{t('routine.reminders.systemDenied')}</p>}
           {systemAlerts === 'unsupported' && <p role="status" className="mb-0 mt-3">{t('routine.reminders.systemUnsupported')}</p>}
         </section>
+        </div>
       </div>
     </main>
   )

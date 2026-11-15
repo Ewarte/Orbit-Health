@@ -79,7 +79,7 @@ function StatCloud({
         </div>
 
         {indicators.length === 0 ? (
-          <p className="m-0 text-xs text-mute">{t('holo.noReadings')}</p>
+          <p className="m-0 text-xs text-mute">{t(zone.id === 'metabolism' ? 'holo.noGlucose' : 'holo.noReadings')}</p>
         ) : (
           <div className="space-y-2">
             {indicators.map((ind) => {
@@ -166,7 +166,8 @@ export function HoloShell({
         </div>
       </div>
 
-      <div className="relative h-[440px] w-full sm:h-[480px] lg:h-[530px]" role="group" aria-label={t('holo.canvasLabel')}>
+      {/* En tablet horizontal el lienzo se ajusta al alto de la pantalla para que «Hoy» quepa sin scroll. */}
+      <div className="relative h-[440px] w-full sm:h-[480px] lg:h-[clamp(380px,calc(100dvh-316px),600px)]" role="group" aria-label={t('holo.canvasLabel')}>
         {indicators && indicators.length > 0 && (
           <div className="hidden md:block">
             <ConnectingLines selected={selectedZone} />
@@ -186,7 +187,7 @@ export function HoloShell({
           ))}
       </div>
 
-      <div className="z-10 mt-2 flex w-full flex-wrap items-center justify-center gap-1.5 border-t border-cyan-500/20 pt-2.5">
+      <div className="z-10 mt-2 flex w-full flex-wrap items-center justify-center gap-1.5 border-t border-cyan-500/20 pt-2.5 lg:grid lg:grid-cols-5">
         {ZONE_META.map((z) => {
           const isSel = selectedZone === z.id
           const c = getStatusColor(zonesStatus?.[z.id])
@@ -196,7 +197,7 @@ export function HoloShell({
               type="button"
               onClick={() => onSelectZone(z.id)}
               aria-pressed={isSel}
-              className={`flex min-h-[44px] items-center gap-1.5 rounded-lg px-3 text-xs font-medium transition-all ${
+              className={`flex min-h-[44px] min-w-0 items-center gap-1.5 rounded-lg px-3 text-xs font-medium leading-tight transition-all lg:justify-center lg:px-2 ${
                 isSel
                   ? 'border border-red-500/80 bg-red-950/70 text-white shadow-[0_0_12px_rgba(255,32,78,0.5)]'
                   : 'border border-white/5 bg-white/[0.02] text-mute hover:border-cyan-500/40 hover:text-cyan-200'

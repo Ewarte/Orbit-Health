@@ -5,38 +5,24 @@ import * as THREE from 'three'
 import type { ZoneId } from '../../types'
 import { useI18n } from '../../lib/useI18n'
 import { HoloShell } from './HoloShell'
-import { HIGHLIGHT, getStatusColor } from './holoZonas'
+import { HIGHLIGHT, ZONE_OF_MESH, getStatusColor } from './holoZonas'
 import type { Holograma3DProps } from './Holograma3D'
 
 /* ═══════════════════════════════════════════════════════════════════════
    VERSIÓN B: modelo anatómico (BodyParts3D) con órganos con nombre.
-   El archivo public/anatomia.glb lleva 14 mallas; cada una pertenece a una zona.
+   El archivo public/anatomia.glb lleva 34 mallas (esqueleto completo y 13 órganos); cada una pertenece a una zona.
    ═══════════════════════════════════════════════════════════════════════ */
 
-/** Zona a la que pertenece cada malla del archivo anatomia.glb. */
-const ZONE_OF_MESH: Record<string, ZoneId> = {
-  cerebro: 'head',
-  corazon: 'heart',
-  pulmon_der: 'heart',
-  pulmon_izq: 'heart',
-  higado: 'metabolism',
-  estomago: 'metabolism',
-  rinon_der: 'metabolism',
-  rinon_izq: 'metabolism',
-  piel: 'body',
-  // La columna se agrupa con los huesos largos: la zona «Huesos / piernas» es la del esqueleto.
-  columna: 'legs',
-  femur_der: 'legs',
-  femur_izq: 'legs',
-  tibia_der: 'legs',
-  tibia_izq: 'legs',
-}
-
 const SKIN = 'piel'
+/** El cráneo es translúcido para que se vea el cerebro que lleva dentro. */
+const SKULL = 'craneo'
 
 function zoneFromEvent(e: ThreeEvent<PointerEvent | MouseEvent>): ZoneId | null {
-  // La piel envuelve todo: se prefiere el órgano más cercano que no sea la piel.
-  const hit = e.intersections.find((i) => i.object.name !== SKIN) ?? e.intersections[0]
+  // La piel y el cráneo envuelven a lo demás: se prefiere el órgano o hueso más cercano que no sean ellos.
+  const hit =
+    e.intersections.find((i) => i.object.name !== SKIN && i.object.name !== SKULL) ??
+    e.intersections.find((i) => i.object.name !== SKIN) ??
+    e.intersections[0]
   return hit ? (ZONE_OF_MESH[hit.object.name] ?? null) : null
 }
 
@@ -62,13 +48,14 @@ function AnatomyModel({
     scene.traverse((child) => {
       if (!(child as THREE.Mesh).isMesh) return
       const isSkin = child.name === SKIN
+      const isSkull = child.name === SKULL
       map.set(
         child.name,
         new THREE.MeshStandardMaterial({
           roughness: 0.55,
           metalness: 0.1,
-          transparent: isSkin,
-          depthWrite: !isSkin,
+          transparent: isSkin || isSkull,
+          depthWrite: !(isSkin || isSkull),
           side: isSkin ? THREE.FrontSide : THREE.DoubleSide,
         }),
       )
@@ -82,7 +69,7 @@ function AnatomyModel({
       if (!mesh.isMesh) return
       if (!mesh.geometry.attributes.normal) mesh.geometry.computeVertexNormals()
       mesh.material = materials.get(mesh.name) ?? mesh.material
-      mesh.renderOrder = mesh.name === SKIN ? 2 : 1
+      mesh.renderOrder = mesh.name === SKIN ? 3 : mesh.name === SKULL ? 2 : 1
     })
   }, [scene, materials])
 
@@ -101,6 +88,11 @@ function AnatomyModel({
         material.emissive.copy(selected ? glow : base)
         material.emissiveIntensity = selected ? 0.5 : 0.25
         material.opacity = selected ? 0.38 : hovered ? 0.24 : 0.13
+      } else if (name === SKULL) {
+        material.color.copy(base).lerp(glow, selected ? 0.7 : 0)
+        material.emissive.copy(selected ? glow : base)
+        material.emissiveIntensity = selected ? 0.5 : hovered ? 0.35 : 0.1
+        material.opacity = selected ? 0.5 : 0.28
       } else {
         // La zona medida se tiñe de rojo; las demás conservan el color de su estado, más tenue.
         if (selected) base.lerp(glow, 0.7)

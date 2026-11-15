@@ -15,9 +15,9 @@ export function GuidancePage({ indicators }: Props) {
   const alerts = activeAlerts(indicators)
 
   return (
-    <main className="min-w-0 px-4 py-5 sm:px-6 sm:py-8 lg:px-8">
-      <div className="mx-auto max-w-4xl">
-        <header className="mb-6">
+    <main className="min-w-0 px-4 py-5 sm:px-6 sm:py-8 lg:px-6 lg:py-5">
+      <div className="mx-auto max-w-[1400px]">
+        <header className="mb-5">
           <p className="m-0 text-xs font-semibold uppercase tracking-wider text-watch">{t('guidance.eyebrow')}</p>
           <h1 className="mt-1 font-display text-3xl font-semibold text-text sm:text-4xl">{t('guidance.title')}</h1>
           <p className="mt-2 max-w-2xl text-mute">{t('guidance.intro')}</p>
@@ -29,12 +29,12 @@ export function GuidancePage({ indicators }: Props) {
         </header>
 
         {alerts.length === 0 ? <AllClear /> : (
-          <div className="space-y-4">
+          <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
             {alerts.map((alert) => <AlertCard key={alert.indicator.id} alert={alert} />)}
           </div>
         )}
 
-        <section className="mt-6 rounded-xl border border-edge bg-panel p-4 text-sm text-mute">{t('guidance.footer')}</section>
+        <section className="mt-5 rounded-xl border border-edge bg-panel p-4 text-sm text-mute">{t('guidance.footer')}</section>
       </div>
     </main>
   )
@@ -66,7 +66,7 @@ function AlertCard({ alert }: { alert: Alert }) {
 
           <p className="mb-0 mt-3 text-mute"><strong className="text-text">{t('guidance.meaning')}. </strong>{entry?.meaning[lang] ?? t('guidance.generic.meaning')}</p>
 
-          <div className="mt-5 grid gap-4 md:grid-cols-2">
+          <div className="mt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-1 2xl:grid-cols-2">
             <ActionList title={t('guidance.doNow')} items={entry?.doNow[lang] ?? [t('guidance.generic.doNow')]} icon={<CheckCircle2 className="h-4 w-4 text-watch" aria-hidden="true" />} />
             <ActionList title={t('guidance.ifWorse')} items={entry?.ifWorse[lang] ?? [t('guidance.generic.ifWorse')]} icon={<ShieldAlert className="h-4 w-4 text-act" aria-hidden="true" />} />
           </div>
