@@ -17,8 +17,8 @@ export function IndicatorTile({ indicator, selected, onSelect }: Props) {
       type="button"
       onClick={onSelect}
       aria-pressed={selected}
-      className={`flex min-h-36 h-full w-full cursor-pointer touch-manipulation flex-col justify-start rounded-lg border border-t-4 bg-panel p-4 text-left transition-colors hover:border-mute ${ui.border} ${
-        selected ? 'border-text' : 'border-edge'
+      className={`flex min-h-36 h-full w-full cursor-pointer touch-manipulation flex-col justify-start rounded-xl border border-t-4 bg-panel p-4 text-left transition-all duration-200 hover:border-mute ${ui.border} ${
+        selected ? 'border-red-400 ring-2 ring-red-500/80 shadow-[0_0_20px_rgba(255,32,78,0.35)] scale-[1.02]' : 'border-edge'
       }`}
     >
       <span className="block text-sm font-medium text-mute">{indicator.name}</span>

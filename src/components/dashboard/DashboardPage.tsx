@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { NoticeCard } from '../../features/guidance/NoticeCard'
-import { statusUi, worstStatus } from '../../lib/status'
+import { worstStatus } from '../../lib/status'
 import type { Indicator, Mission, Notice, Status, Zone, ZoneId } from '../../types'
-import { BodyFigure } from '../health/BodyFigure'
 import { IndicatorTile } from './IndicatorTile'
+import { Holograma3D } from '../health/Holograma3D'
 
 interface Props {
   mission: Mission
@@ -17,79 +17,103 @@ export function DashboardPage({ mission, zones, indicators, notices, onGuidance 
   const zoneStatus = (id: ZoneId): Status | undefined =>
     worstStatus(indicators.filter((i) => i.zone === id).map((i) => i.status))
 
-  // Al abrir, se muestra la zona que más atención necesita.
   const [selected, setSelected] = useState<ZoneId>(() => {
     const ranked = [...zones].sort((a, b) => rank(zoneStatus(b.id)) - rank(zoneStatus(a.id)))
     return ranked[0]?.id ?? 'head'
   })
 
-  const figureZones = Object.fromEntries(
-    zones.map((z) => [z.id, { name: z.name, status: zoneStatus(z.id) }]),
-  ) as Record<ZoneId, { name: string; status?: Status }>
+  const [viewMode, setViewMode] = useState<'dynamic' | 'grid'>('dynamic')
 
-  const zone = zones.find((z) => z.id === selected)
-  const zoneIndicators = indicators.filter((i) => i.zone === selected)
+  const figureZones = Object.fromEntries(
+    zones.map((z) => [z.id, zoneStatus(z.id)]),
+  ) as Record<ZoneId, Status | undefined>
 
   return (
-    <div className="grid grid-cols-1 xl:min-h-screen xl:grid-cols-[1fr_320px]">
-      <main className="min-w-0 px-4 py-5 sm:px-6 sm:py-6">
-        <header className="mb-5 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-          <h1 className="m-0 font-display text-3xl font-semibold">Mission day {mission.day}</h1>
-          <p className="m-0 text-mute">
+    <div className="mx-auto w-full max-w-5xl px-4 py-5 sm:px-6 space-y-5">
+      {/* Cabecera de la Misión y Selector de Telemetría */}
+      <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
+        <div>
+          <h1 className="m-0 font-display text-2xl sm:text-3xl font-semibold">Mission day {mission.day}</h1>
+          <p className="m-0 text-sm text-mute">
             {mission.place}, last check {mission.lastCheck}
           </p>
-        </header>
-
-        <ul className="m-0 grid list-none grid-cols-1 gap-3 p-0 sm:grid-cols-2 2xl:grid-cols-4">
-          {indicators.map((indicator) => (
-            <li key={indicator.id}>
-              <IndicatorTile
-                indicator={indicator}
-                selected={indicator.zone === selected}
-                onSelect={() => setSelected(indicator.zone)}
-              />
-            </li>
-          ))}
-        </ul>
-
-        {notices.map((notice) => (
-          <NoticeCard key={notice.indicatorId} notice={notice} onGuidance={onGuidance} />
-        ))}
-      </main>
-
-      <aside aria-label="Body map" className="bg-rail px-4 py-6 sm:px-6 xl:px-5">
-        <div className="mb-5 rounded-3xl border border-edge/60 bg-gradient-to-b from-panel/40 to-panel/10 p-5 shadow-lg backdrop-blur-md">
-          <div className="mb-3 flex items-center justify-between border-b border-edge/40 pb-2.5 text-xs">
-            <span className="font-semibold uppercase tracking-wider text-mute">Biometric Map</span>
-            <span className="inline-flex items-center gap-1.5 font-mono text-[11px] text-ok">
-              <span className="h-1.5 w-1.5 rounded-full bg-ok animate-pulse" />
-              LIVE TELEMETRY
-            </span>
-          </div>
-          <BodyFigure zones={figureZones} selected={selected} onSelect={setSelected} className="mx-auto block h-72 max-w-full sm:h-80 xl:h-96" />
         </div>
-        {zone && (
-          <div aria-live="polite">
-            <h2 className="m-0 font-display text-xl font-semibold">{zone.name}</h2>
-            <p className="mt-1 mb-3 text-sm text-mute">{zone.about}</p>
-            {zoneIndicators.length === 0 ? (
-              <p className="m-0 text-sm text-mute">No readings yet for this area.</p>
-            ) : (
-              <ul className="m-0 list-none p-0">
-                {zoneIndicators.map((i) => (
-                  <li key={i.id} className="flex items-baseline justify-between gap-3 border-t border-edge py-2 text-sm">
-                    <span>{i.name}</span>
-                    <span className="tabular-nums text-mute">
-                      {i.value} {i.unit}
-                    </span>
-                    <span className={`font-semibold ${statusUi[i.status].text}`}>{statusUi[i.status].label}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
+
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Conmutador de vista de telemetría */}
+          <div className="flex items-center rounded-xl border border-edge/60 bg-panel/50 p-1 text-xs">
+            <button
+              type="button"
+              onClick={() => setViewMode('dynamic')}
+              className={`flex items-center gap-1.5 rounded-lg px-3 py-1 font-medium transition-all ${
+                viewMode === 'dynamic'
+                  ? 'border border-cyan-400/50 bg-cyan-950/80 text-cyan-200 shadow-sm'
+                  : 'text-mute hover:text-text'
+              }`}
+            >
+              <span>🎯</span>
+              <span>Telemetría Focalizada 3D</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('grid')}
+              className={`flex items-center gap-1.5 rounded-lg px-3 py-1 font-medium transition-all ${
+                viewMode === 'grid'
+                  ? 'border border-cyan-400/50 bg-cyan-950/80 text-cyan-200 shadow-sm'
+                  : 'text-mute hover:text-text'
+              }`}
+            >
+              <span>📊</span>
+              <span>Ver Todas ({indicators.length})</span>
+            </button>
           </div>
-        )}
-      </aside>
+
+          <div className="flex items-center gap-2 rounded-full border border-edge/60 bg-panel/40 px-3.5 py-1.5 text-xs backdrop-blur-sm">
+            <span className="h-1.5 w-1.5 rounded-full bg-ok animate-pulse" />
+            <span className="font-mono uppercase tracking-wider text-ok">Live Telemetry</span>
+          </div>
+        </div>
+      </header>
+
+      {/* Escenario Central: Holograma 3D con Nubes Dinámicas alrededor del Cuerpo (Contenedor calibrado y elegante) */}
+      <section aria-label="Holograma 3D Interactivo" className="mx-auto w-full max-w-3xl lg:max-w-4xl">
+        <Holograma3D
+          selectedZone={selected}
+          onSelectZone={setSelected}
+          zonesStatus={figureZones}
+          indicators={indicators}
+        />
+      </section>
+
+      {/* Modo Cuadrícula de Métricas Completa (Opcional bajo demanda) */}
+      {viewMode === 'grid' && (
+        <section aria-label="Todas las Métricas" className="space-y-3">
+          <div className="flex items-center justify-between border-b border-edge/40 pb-2">
+            <h2 className="m-0 font-display text-base font-semibold text-text">Todas las Métricas del Traje</h2>
+            <span className="font-mono text-xs text-mute">{indicators.length} telemetrías registradas</span>
+          </div>
+          <ul className="m-0 grid list-none grid-cols-1 gap-3 p-0 sm:grid-cols-2 lg:grid-cols-4">
+            {indicators.map((indicator) => (
+              <li key={indicator.id}>
+                <IndicatorTile
+                  indicator={indicator}
+                  selected={indicator.zone === selected}
+                  onSelect={() => setSelected(indicator.zone)}
+                />
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {/* Notificaciones y avisos de guía médica */}
+      {notices.length > 0 && (
+        <section aria-label="Avisos Médicos" className="space-y-3">
+          {notices.map((notice) => (
+            <NoticeCard key={notice.indicatorId} notice={notice} onGuidance={onGuidance} />
+          ))}
+        </section>
+      )}
     </div>
   )
 }
