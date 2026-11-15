@@ -6,11 +6,12 @@ import {
   REMINDERS_STORAGE_KEY,
   ROUTINE_STORAGE_KEY,
   ROUTINE_TASKS,
-  dayKey,
   dueReminders,
   emptyDay,
+  localClock,
   parseEnabledReminders,
   parseRoutineDay,
+  type RoutineClock,
   type RoutineDay,
   type RoutineTaskId,
 } from './routineLogic'
@@ -44,18 +45,27 @@ function currentSystemAlerts(): SystemAlerts {
   return typeof Notification === 'undefined' ? 'unsupported' : Notification.permission
 }
 
-export function RoutinePage() {
+interface RoutinePageProps {
+  /** Reloj de la misión; por defecto, la hora local del dispositivo. */
+  clock?: (now: Date) => RoutineClock
+}
+
+export function RoutinePage({ clock = localClock }: RoutinePageProps) {
   const { t } = useI18n()
   const [now, setNow] = useState(() => new Date())
-  const [stored, setStored] = useState<RoutineDay>(() => parseRoutineDay(readStorage(ROUTINE_STORAGE_KEY), new Date()))
+  const reading = clock(now)
+  const [stored, setStored] = useState<RoutineDay>(() => {
+    const start = new Date()
+    return parseRoutineDay(readStorage(ROUTINE_STORAGE_KEY), start, clock(start).dayKey)
+  })
   const [enabled, setEnabled] = useState<RoutineTaskId[]>(() => parseEnabledReminders(readStorage(REMINDERS_STORAGE_KEY)))
   const [systemAlerts, setSystemAlerts] = useState<SystemAlerts>(currentSystemAlerts)
   const notified = useRef(new Set<string>())
 
   // Al cambiar de fecha la rutina cuenta como un día en blanco (se guarda cuando la persona actúe).
-  const day = stored.date === dayKey(now) ? stored : emptyDay(now)
+  const day = stored.date === reading.dayKey ? stored : emptyDay(now, reading.dayKey)
   // Avisos pendientes: se calculan en cada vuelta, no se guardan.
-  const due = dueReminders(now, day, enabled)
+  const due = dueReminders(now, day, enabled, reading.minutesOfDay)
 
   // El reloj avanza cada 30 s para detectar la hora de cada recordatorio.
   useEffect(() => {
@@ -90,7 +100,7 @@ export function RoutinePage() {
   }
 
   function reset() {
-    saveDay({ ...emptyDay(now), dismissed: day.dismissed })
+    saveDay({ ...emptyDay(now, reading.dayKey), dismissed: day.dismissed })
   }
 
   function toggleReminder(id: RoutineTaskId) {
@@ -173,7 +183,7 @@ export function RoutinePage() {
                     </span>
                     <span className="min-w-0 flex-1">
                       <strong className={`block ${complete ? 'text-ok line-through' : 'text-text'}`}>{label}</strong>
-                      <span className="text-sm text-mute">{time}</span>
+                      <span className="text-sm text-mute">{time}{reading.label ? ` ${reading.label}` : ''}</span>
                     </span>
                     <CheckCircle2 className={`h-5 w-5 ${complete ? 'text-ok' : 'text-edge'}`} />
                   </button>

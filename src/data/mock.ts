@@ -2,13 +2,11 @@
   DATOS DE DEMOSTRACIÓN. Las cifras y textos no son umbrales validados:
   se sustituyen por el motor de evaluación y el contenido médico con fuente.
 */
+import { defaultMission } from '../lib/missionTime'
 import type { Indicator, Mission, Notice, Zone } from '../types'
 
-export const mission: Mission = {
-  day: 47,
-  place: 'Lunar transit',
-  lastCheck: '07:10',
-}
+// Estación espacial, despegue 46 días antes de ahora (día de vuelo 47).
+export const mission: Mission = defaultMission(Date.now())
 
 export const zones: Zone[] = [
   { id: 'head', name: 'Brain & behavior', about: 'Hazard: Isolation and confinement; shifting light cycles and work demands. NASA lists chronic sleep loss, constant work demands and irregular body clocks as risks, and notes that isolation, radiation and distance from Earth can take a toll on mental health.' },

@@ -169,12 +169,17 @@ describe('pantallas', () => {
     const onSave = vi.fn()
     render(
       <I18nProvider>
-        <MissionPage mission={{ day: 47, place: 'Lunar transit', lastCheck: '07:10' }} onSave={onSave} />
+        <MissionPage
+          mission={{ environment: 'station', launchUtc: '2026-09-30T06:00:00.000Z', day: 47, place: 'Lunar transit', lastCheck: '07:10' }}
+          onSave={onSave}
+        />
       </I18nProvider>,
     )
     expect(screen.getByText('Contexto de la misión')).toBeTruthy()
     fireEvent.click(screen.getByText('Guardar misión'))
-    expect(onSave).toHaveBeenCalledWith({ day: 47, place: 'Lunar transit', lastCheck: '07:10' })
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({ environment: 'station', launchUtc: '2026-09-30T06:00:00.000Z', place: 'Lunar transit' }),
+    )
     expect(screen.getByRole('status').textContent).toContain('guardado')
   })
 })

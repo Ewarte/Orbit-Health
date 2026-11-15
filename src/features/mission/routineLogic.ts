@@ -7,7 +7,7 @@ export type RoutineTaskId = 'check' | 'exercise' | 'review' | 'sleep'
 
 export interface RoutineTask {
   id: RoutineTaskId
-  /** Hora local de la tarea, formato HH:MM. */
+  /** Hora de la tarea en el reloj de la rutina (UTC, LMST o local), formato HH:MM. */
   time: string
 }
 
@@ -45,25 +45,38 @@ export function dayKey(date: Date): string {
   return `${date.getFullYear()}-${month}-${day}`
 }
 
-export function emptyDay(now: Date): RoutineDay {
-  return { date: dayKey(now), done: [], dismissed: [] }
+/** Lo que la rutina necesita saber del reloj: minutos del día, clave del día y, si hay, su etiqueta ('UTC', 'LMST'). */
+export interface RoutineClock {
+  minutesOfDay: number
+  dayKey: string
+  label?: string
+}
+
+/** Reloj por defecto: la hora local del dispositivo. */
+export function localClock(now: Date): RoutineClock {
+  return { minutesOfDay: now.getHours() * 60 + now.getMinutes(), dayKey: dayKey(now) }
+}
+
+/** `key` permite una clave de día externa (fecha UTC o sol de Marte); por defecto, la fecha local. */
+export function emptyDay(now: Date, key: string = dayKey(now)): RoutineDay {
+  return { date: key, done: [], dismissed: [] }
 }
 
 /** Lee lo guardado; si está dañado, es de otro día o tiene el formato antiguo, empieza un día en blanco. */
-export function parseRoutineDay(raw: string | null, now: Date): RoutineDay {
-  if (!raw) return emptyDay(now)
+export function parseRoutineDay(raw: string | null, now: Date, key: string = dayKey(now)): RoutineDay {
+  if (!raw) return emptyDay(now, key)
   try {
     const data: unknown = JSON.parse(raw)
-    if (typeof data !== 'object' || data === null || Array.isArray(data)) return emptyDay(now)
+    if (typeof data !== 'object' || data === null || Array.isArray(data)) return emptyDay(now, key)
     const { date, done, dismissed } = data as Partial<Record<keyof RoutineDay, unknown>>
-    if (date !== dayKey(now)) return emptyDay(now)
+    if (date !== key) return emptyDay(now, key)
     return {
       date,
       done: Array.isArray(done) ? done.filter(isTaskId) : [],
       dismissed: Array.isArray(dismissed) ? dismissed.filter(isTaskId) : [],
     }
   } catch {
-    return emptyDay(now)
+    return emptyDay(now, key)
   }
 }
 
@@ -87,8 +100,13 @@ function minutesOfDay(time: string): number {
  * Tareas que hay que avisar ahora: su hora ya llegó (y no pasó más de la ventana),
  * tienen recordatorio activo, no están hechas y la persona no cerró ya el aviso.
  */
-export function dueReminders(now: Date, day: RoutineDay, enabled: readonly RoutineTaskId[]): RoutineTask[] {
-  const current = now.getHours() * 60 + now.getMinutes()
+export function dueReminders(
+  now: Date,
+  day: RoutineDay,
+  enabled: readonly RoutineTaskId[],
+  /** Minutos del día en el reloj de la misión; por defecto, la hora local de `now`. */
+  current: number = now.getHours() * 60 + now.getMinutes(),
+): RoutineTask[] {
   return ROUTINE_TASKS.filter((task) => {
     const elapsed = current - minutesOfDay(task.time)
     return (

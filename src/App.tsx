@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { localizePlace } from './lib/i18n'
+import { flightDay, missionClock, normalizeMission, parseUtc } from './lib/missionTime'
 import { useI18n } from './lib/useI18n'
 import { DashboardPage } from './components/dashboard/DashboardPage'
 import { AppShell, type NavItem } from './components/layout/AppShell'
-import { indicators, mission, notices, zones } from './data/mock'
+import { indicators, notices, zones } from './data/mock'
 import { DailyCheckPage } from './features/measurements/DailyCheckPage'
 import { CURRENT_METRICS_KEY, normalizeMetrics } from './features/measurements/dailyCheckData'
 import type { DailyMetrics } from './features/measurements/dailyCheckTypes'
@@ -19,11 +20,19 @@ export default function App() {
   const { t, lang } = useI18n()
   const nav: NavItem[] = navIds.map((id) => ({ id, label: t(`nav.${id}`), ready: true }))
   const [current, setCurrent] = useState('check')
+  // Reloj que avanza cada 30 s: de él sale el día de vuelo.
+  const [nowMs, setNowMs] = useState(() => Date.now())
+  useEffect(() => {
+    const timer = window.setInterval(() => setNowMs(Date.now()), 30_000)
+    return () => window.clearInterval(timer)
+  }, [])
   const [missionState, setMissionState] = useState(() => {
+    let raw: unknown = null
     try {
       const saved = localStorage.getItem('orbit_health_mission_config')
-      return saved ? JSON.parse(saved) as typeof mission : mission
-    } catch { return mission }
+      raw = saved ? JSON.parse(saved) : null
+    } catch { /* Sin datos legibles: se usa la demostración. */ }
+    return normalizeMission(raw, Date.now())
   })
   const [liveMetrics, setLiveMetrics] = useState<DailyMetrics>(() => {
     try {
@@ -34,7 +43,12 @@ export default function App() {
     }
     return normalizeMetrics(null)
   })
-  const missionView = { ...missionState, place: localizePlace(missionState.place, lang) }
+  const missionView = {
+    ...missionState,
+    day: flightDay(nowMs, parseUtc(missionState.launchUtc) ?? nowMs),
+    place: localizePlace(missionState.place, lang),
+  }
+  const routineClock = useCallback((now: Date) => missionClock(now.getTime(), missionState), [missionState])
   // Indicadores calculados con los datos vivos; si el vivo tiene poca historia, se conserva la mini gráfica de demostración.
   const liveIndicators = evaluateDailyMetrics(liveMetrics).map((live) => {
     const base = indicators.find((item) => item.id === live.id)
@@ -53,7 +67,7 @@ export default function App() {
       ) : current === 'guidance' ? (
         <GuidancePage indicators={liveIndicators} />
       ) : current === 'routine' ? (
-        <RoutinePage />
+        <RoutinePage clock={routineClock} />
       ) : current === 'mission' ? (
         <MissionPage key={lang} mission={missionView} onSave={(nextMission) => { setMissionState(nextMission); localStorage.setItem('orbit_health_mission_config', JSON.stringify(nextMission)) }} />
       ) : null}

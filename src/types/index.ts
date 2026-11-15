@@ -44,9 +44,17 @@ export interface Indicator {
 }
 
 export interface Mission {
-  day: number
+  environment: 'capsule' | 'station' | 'transit' | 'moon' | 'mars'
+  /** Instante de despegue en UTC (texto ISO 8601). */
+  launchUtc: string
   place: string
   lastCheck: string
+  /** Día de vuelo: se CALCULA con flightDay a partir del despegue; otras pantallas lo leen. */
+  day: number
+  /** Llegada a la superficie en UTC (Luna o Marte, opcional). */
+  arrivalUtc?: string
+  /** Longitud este del sitio en Marte, en grados. */
+  marsLongitudeEast?: number
 }
 
 export interface Zone {
