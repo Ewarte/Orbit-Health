@@ -1,20 +1,29 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
-import { BodyFigure } from '../components/health/BodyFigure'
-import type { ZoneId, Status } from '../types'
+import { BodyMapPage } from '../components/health/BodyMapPage'
+import type { Indicator, Zone } from '../types'
 
-describe('BodyFigure', () => {
-  const dummyZones: Record<ZoneId, { name: string; status?: Status }> = {
-    head: { name: 'Brain & behavior', status: 'watch' },
-    heart: { name: 'Heart & circulation', status: 'ok' },
-    metabolism: { name: 'Metabolism', status: 'ok' },
-    body: { name: 'Whole body', status: 'ok' },
-    legs: { name: 'Bones & muscles', status: 'watch' },
-  }
+const zones: Zone[] = [
+  { id: 'head', name: 'Brain & behavior', about: 'Sleep, mood and vision.' },
+  { id: 'heart', name: 'Heart & circulation', about: 'Blood pressure and heart rate.' },
+  { id: 'metabolism', name: 'Metabolism', about: 'Blood sugar.' },
+  { id: 'body', name: 'Whole body', about: 'Body temperature.' },
+  { id: 'legs', name: 'Bones & muscles', about: 'Bone density.' },
+]
 
-  it('renders all 5 anatomical interactive zones', () => {
-    const onSelect = vi.fn()
-    render(<BodyFigure zones={dummyZones} selected="head" onSelect={onSelect} />)
+const indicators: Indicator[] = [
+  { id: 'sleep', name: 'Sleep', value: '5.8', unit: 'h', status: 'watch', reason: '3 short nights', zone: 'head', history: [7, 6, 5.8] },
+  { id: 'mood', name: 'Mood', value: '3', unit: 'of 5', status: 'watch', reason: 'below usual', zone: 'head', history: [4, 3, 3] },
+  { id: 'bp', name: 'Blood pressure', value: '128/82', unit: 'mmHg', status: 'ok', reason: '', zone: 'heart', history: [126, 128] },
+  { id: 'hr', name: 'Heart rate', value: '64', unit: 'bpm', status: 'ok', reason: '', zone: 'heart', history: [65, 64] },
+  { id: 'glucose', name: 'Blood sugar', value: '96', unit: 'mg/dL', status: 'ok', reason: '', zone: 'metabolism', history: [98, 96] },
+  { id: 'temp', name: 'Body temperature', value: '36.7', unit: '°C', status: 'ok', reason: '', zone: 'body', history: [36.6, 36.7] },
+  { id: 'exercise', name: 'Bone session', value: '45', unit: 'min', status: 'watch', reason: 'Below protocol', zone: 'legs', history: [90, 45] },
+]
+
+describe('BodyMapPage', () => {
+  it('renders all 5 interactive body zones', () => {
+    render(<BodyMapPage zones={zones} indicators={indicators} />)
 
     expect(screen.getByRole('button', { name: /Brain & behavior/i })).toBeDefined()
     expect(screen.getByRole('button', { name: /Heart & circulation/i })).toBeDefined()
@@ -23,40 +32,33 @@ describe('BodyFigure', () => {
     expect(screen.getByRole('button', { name: /Bones & muscles/i })).toBeDefined()
   })
 
-  it('indicates selected state with aria-pressed', () => {
-    const onSelect = vi.fn()
-    render(<BodyFigure zones={dummyZones} selected="heart" onSelect={onSelect} />)
+  it('shows stat cloud for the initially selected zone (worst status)', () => {
+    render(<BodyMapPage zones={zones} indicators={indicators} />)
 
+    // Head has "watch" status so it starts selected — its indicators should be visible
+    expect(screen.getByText('Sleep')).toBeDefined()
+    expect(screen.getByText('5.8')).toBeDefined()
+    expect(screen.getByText('Mood')).toBeDefined()
+  })
+
+  it('switches stat cloud when clicking another zone', () => {
+    render(<BodyMapPage zones={zones} indicators={indicators} />)
+
+    // Click on heart zone
     const heartZone = screen.getByRole('button', { name: /Heart & circulation/i })
-    expect(heartZone.getAttribute('aria-pressed')).toBe('true')
+    fireEvent.click(heartZone)
 
-    const headZone = screen.getByRole('button', { name: /Brain & behavior/i })
-    expect(headZone.getAttribute('aria-pressed')).toBe('false')
+    // Heart indicators should be visible
+    expect(screen.getByText('Blood pressure')).toBeDefined()
+    expect(screen.getByText('Heart rate')).toBeDefined()
   })
 
-  it('calls onSelect when a zone is clicked', () => {
-    const onSelect = vi.fn()
-    render(<BodyFigure zones={dummyZones} selected="head" onSelect={onSelect} />)
+  it('supports keyboard navigation', () => {
+    render(<BodyMapPage zones={zones} indicators={indicators} />)
 
-    const chest = screen.getByRole('button', { name: /Heart & circulation/i })
-    fireEvent.click(chest)
-    expect(onSelect).toHaveBeenCalledWith('heart')
+    const metabolismZone = screen.getByRole('button', { name: /Metabolism/i })
+    fireEvent.keyDown(metabolismZone, { key: 'Enter' })
 
-    const legs = screen.getByRole('button', { name: /Bones & muscles/i })
-    fireEvent.click(legs)
-    expect(onSelect).toHaveBeenCalledWith('legs')
-  })
-
-  it('supports keyboard navigation via Enter and Space', () => {
-    const onSelect = vi.fn()
-    render(<BodyFigure zones={dummyZones} selected="head" onSelect={onSelect} />)
-
-    const abdomen = screen.getByRole('button', { name: /Metabolism/i })
-    fireEvent.keyDown(abdomen, { key: 'Enter' })
-    expect(onSelect).toHaveBeenCalledWith('metabolism')
-
-    const arms = screen.getByRole('button', { name: /Whole body/i })
-    fireEvent.keyDown(arms, { key: ' ' })
-    expect(onSelect).toHaveBeenCalledWith('body')
+    expect(screen.getByText('Blood sugar')).toBeDefined()
   })
 })

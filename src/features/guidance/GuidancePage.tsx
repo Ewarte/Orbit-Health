@@ -10,14 +10,16 @@ import {
 } from 'lucide-react'
 import { guidanceProtocols } from '../../data/mock'
 import type { GuidanceProtocol, Mission, Notice } from '../../types'
+import type { ActionGuide } from '../../data/actionGuides'
 
 interface Props {
   mission?: Mission
   notices?: Notice[]
+  guides?: ActionGuide[]
   onNavigate?: (screen: string) => void
 }
 
-export function GuidancePage({ mission, notices = [], onNavigate }: Props) {
+export function GuidancePage({ mission, notices = [], guides = [], onNavigate }: Props) {
   const currentDay = mission?.day ?? 47
   const [selectedProtocolId, setSelectedProtocolId] = useState<string>(guidanceProtocols[0].id)
   const [addedTaskId, setAddedTaskId] = useState<string | null>(null)
@@ -108,9 +110,18 @@ export function GuidancePage({ mission, notices = [], onNavigate }: Props) {
                 <h2 className="mt-1 text-lg font-bold text-text">
                   {notices[0].title} — {notices[0].summary}
                 </h2>
-                <p className="mt-1 text-xs text-mute max-w-2xl">
-                  Revisa los pasos de mitigación a continuación y aplica la contramedida circadiana para restaurar la capacidad cognitiva en la misión.
-                </p>
+                {(() => {
+                  const guide = guides.find((g) => g.indicatorId === notices[0].indicatorId)
+                  return guide ? (
+                    <p className="mt-1 text-xs text-mute max-w-2xl">
+                      Notificar a: <strong className="text-text">{guide.notify}</strong>
+                    </p>
+                  ) : (
+                    <p className="mt-1 text-xs text-mute max-w-2xl">
+                      Revisa los pasos de mitigación a continuación y aplica la contramedida circadiana para restaurar la capacidad cognitiva en la misión.
+                    </p>
+                  )
+                })()}
               </div>
             </div>
           </section>

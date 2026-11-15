@@ -35,6 +35,7 @@ interface Props {
   indicators?: Indicator[]
   notices?: Notice[]
   onNavigate?: (screen: string) => void
+  onSave?: (mission: Mission) => void
 }
 
 type SimulationPhase = 'launch' | 'transit' | 'orbit' | 'return'
@@ -98,7 +99,7 @@ const PHASES_CONFIG: FlightPhaseConfig[] = [
   },
 ]
 
-export function MissionPage({ mission, onNavigate }: Props) {
+export function MissionPage({ mission, onNavigate, onSave }: Props) {
   const currentDay = mission?.day ?? 47
   const cabinSimulationSelectId = useId()
 
@@ -122,6 +123,13 @@ export function MissionPage({ mission, onNavigate }: Props) {
 
   // Radiación acumulada simulada
   const cumulativeRadiation = Number((activePhase.day * 0.358).toFixed(1))
+
+  // Persistir cambios de misión si onSave disponible
+  const handleSavePhase = () => {
+    if (onSave && mission) {
+      onSave({ ...mission, day: activePhase.day })
+    }
+  }
 
   return (
     <main className="min-w-0 px-4 py-5 sm:px-6 sm:py-8 lg:px-8">
@@ -188,7 +196,7 @@ export function MissionPage({ mission, onNavigate }: Props) {
                 <button
                   key={p.id}
                   type="button"
-                  onClick={() => setSelectedPhaseId(p.id)}
+                  onClick={() => { setSelectedPhaseId(p.id); }}
                   className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
                     selectedPhaseId === p.id
                       ? 'bg-[#184840] text-[#5cc98b] shadow-sm ring-1 ring-[#5cc98b]/40'
@@ -307,6 +315,19 @@ export function MissionPage({ mission, onNavigate }: Props) {
               </p>
             </div>
           </div>
+
+          {/* Botón para guardar la fase seleccionada */}
+          {onSave && (
+            <div className="mt-4 flex justify-end">
+              <button
+                type="button"
+                onClick={handleSavePhase}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[#5cc98b] px-4 py-2 text-xs font-bold text-[#0c1e2f] transition-transform hover:bg-[#6edba0] active:scale-95 cursor-pointer"
+              >
+                Aplicar fase como contexto de misión
+              </button>
+            </div>
+          )}
         </section>
 
         {/* =========================================================================

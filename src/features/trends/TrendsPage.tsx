@@ -8,6 +8,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock,
+  Database,
   Droplets,
   Eye,
   Filter,
@@ -38,6 +39,7 @@ import {
   YAxis,
 } from 'recharts'
 import type { Mission } from '../../types'
+import { evaluateTrend } from '../evaluation/trendRule'
 
 export type TimeRange = '7d' | '14d' | '30d' | 'all'
 export type MetricId = 'bp' | 'hr' | 'glucose' | 'temp' | 'sleep' | 'mood' | 'spo2' | 'radiation'
@@ -280,7 +282,30 @@ interface Props {
 
 export function TrendsPage({ mission, onNavigate }: Props) {
   const currentDay = mission?.day ?? 47
-  const allTelemetry = useMemo(() => generateMissionTelemetry(currentDay), [currentDay])
+  const [missionTelemetry, setMissionTelemetry] = useState<TelemetryPoint[]>(() => {
+    try {
+      const saved = localStorage.getItem('orbit_health_mission_telemetry')
+      return saved ? JSON.parse(saved) as TelemetryPoint[] : []
+    } catch {
+      return []
+    }
+  })
+  const allTelemetry = useMemo(
+    () => missionTelemetry.length > 0 ? missionTelemetry : generateMissionTelemetry(currentDay),
+    [currentDay, missionTelemetry],
+  )
+  const [missionLoaded, setMissionLoaded] = useState(missionTelemetry.length > 0)
+
+  function loadSimulatedMission() {
+    const generated = generateMissionTelemetry(currentDay)
+    setMissionTelemetry(generated)
+    setMissionLoaded(true)
+    try {
+      localStorage.setItem('orbit_health_mission_telemetry', JSON.stringify(generated))
+    } catch {
+      // La gráfica sigue disponible en memoria si el navegador bloquea el almacenamiento.
+    }
+  }
 
   const [timeRange, setTimeRange] = useState<TimeRange>('7d')
   const [selectedMetric, setSelectedMetric] = useState<MetricId | 'all'>('all')
@@ -382,6 +407,8 @@ export function TrendsPage({ mission, onNavigate }: Props) {
 
   const activeMetricDef = METRICS_CATALOG.find((m) => m.id === focusedMetricId) || METRICS_CATALOG[0]
   const focusedStats = computeStats(focusedMetricId)
+  const focusedValues = filteredData.map((point) => focusedMetricId === 'bp' ? point.bpSys : point[focusedMetricId])
+  const trendResult = evaluateTrend(focusedValues, activeMetricDef.nominalMin, activeMetricDef.nominalMax)
 
   return (
     <main className="min-w-0 px-4 py-5 sm:px-6 sm:py-8 lg:px-8">
@@ -421,6 +448,14 @@ export function TrendsPage({ mission, onNavigate }: Props) {
               </button>
             </div>
           )}
+          <button
+            type="button"
+            onClick={loadSimulatedMission}
+            className="inline-flex items-center gap-2 rounded-xl border border-ok bg-notice px-4 py-2.5 text-sm font-semibold text-ok hover:brightness-110"
+          >
+            <Database className="h-4 w-4" />
+            {missionLoaded ? 'Recargar misión simulada (47 días)' : 'Cargar misión simulada (47 días)'}
+          </button>
         </header>
 
         {/* BARRA DE CONTROL */}
@@ -670,6 +705,9 @@ export function TrendsPage({ mission, onNavigate }: Props) {
         {/* VISTA ENFOCADA */}
         {selectedMetric !== 'all' && (
           <section className="mb-8 space-y-6">
+            <div className={`rounded-xl border p-4 text-sm ${trendResult.status === 'critical' ? 'border-act bg-notice text-act' : trendResult.status === 'warning' ? 'border-watch bg-notice text-watch' : 'border-ok bg-notice text-ok'}`}>
+              <strong>Trend rule: </strong>{trendResult.message}
+            </div>
             <div className="rounded-2xl border border-edge bg-[#14283d] p-5 sm:p-6 shadow-xl">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between border-b border-edge/60 pb-5">
                 <div className="flex items-start gap-4">

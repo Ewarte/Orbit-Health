@@ -26,7 +26,7 @@ export interface SpaceHealthRecord {
   protocolAction: string;    // Acción sugerida para emergencias offline
 }
 
-// Tipos de presentaciÃ³n que usa el mockup actual del panel.
+// Tipos de presentacion que usa el mockup actual del panel.
 export type Status = 'ok' | 'watch' | 'act'
 export type ZoneId = 'head' | 'heart' | 'metabolism' | 'body' | 'legs'
 

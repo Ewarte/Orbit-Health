@@ -18,7 +18,8 @@ interface Props {
 /**
  * Mapeo de gradientes de alta fidelidad según estado biomédico.
  */
-function getZoneGradient(status?: Status): string {
+function getZoneGradient(status?: Status, isSelected?: boolean): string {
+  if (isSelected) return 'url(#grad-selected-red)'
   if (status === 'ok') return 'url(#grad-ok)'
   if (status === 'watch') return 'url(#grad-watch)'
   if (status === 'act') return 'url(#grad-act)'
@@ -44,9 +45,9 @@ export function BodyFigure({ zones, selected, onSelect, className }: Props) {
     alertBadgePos?: { x: number; y: number },
   ) {
     const state = zones[id]
-    const fill = getZoneGradient(state?.status)
-    const statusLabel = state?.status ? statusUi[state.status].label : 'No readings yet'
     const isSelected = selected === id
+    const fill = getZoneGradient(state?.status, isSelected)
+    const statusLabel = state?.status ? statusUi[state.status].label : 'No readings yet'
     const isHovered = hovered === id
     const isCritical = state?.status === 'act'
     const isWarning = state?.status === 'watch'
@@ -78,7 +79,7 @@ export function BodyFigure({ zones, selected, onSelect, className }: Props) {
         {/* Silueta principal de la zona con fill gradiente y borde dinámico */}
         <g
           fill={fill}
-          stroke={isSelected ? '#6366f1' : isHovered ? '#a5b4fc' : 'rgba(255,255,255,0.06)'}
+          stroke={isSelected ? '#ff204e' : isHovered ? '#a5b4fc' : 'rgba(255,255,255,0.06)'}
           strokeWidth={isSelected ? 3.5 : isHovered ? 2.5 : 1}
           strokeLinejoin="round"
           filter={
@@ -179,7 +180,14 @@ export function BodyFigure({ zones, selected, onSelect, className }: Props) {
             <stop offset="100%" stopColor="#1e3a54" />
           </linearGradient>
 
-          {/* 5. Reflejo especular superior suave para profundidad táctil */}
+          {/* 5. Gradiente Selección Activa de Medición (Tono Rojizo Carmesí Vibrante) */}
+          <linearGradient id="grad-selected-red" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#ff4d6d" />
+            <stop offset="45%" stopColor="#e11d48" />
+            <stop offset="100%" stopColor="#881337" />
+          </linearGradient>
+
+          {/* 6. Reflejo especular superior suave para profundidad táctil */}
           <linearGradient id="grad-specular" x1="0%" y1="0%" x2="0%" y2="100%">
             <stop offset="0%" stopColor="#ffffff" stopOpacity="0.28" />
             <stop offset="35%" stopColor="#ffffff" stopOpacity="0.08" />
@@ -187,10 +195,10 @@ export function BodyFigure({ zones, selected, onSelect, className }: Props) {
             <stop offset="100%" stopColor="#000000" stopOpacity="0.18" />
           </linearGradient>
 
-          {/* Filtro de resplandor para selección activa */}
+          {/* Filtro de resplandor rojizo para selección activa */}
           <filter id="glow-selected" x="-30%" y="-30%" width="160%" height="160%">
-            <feDropShadow dx="0" dy="0" stdDeviation="5" floodColor="#6366f1" floodOpacity="0.75" />
-            <feDropShadow dx="0" dy="2" stdDeviation="10" floodColor="#4f46e5" floodOpacity="0.3" />
+            <feDropShadow dx="0" dy="0" stdDeviation="6" floodColor="#ff204e" floodOpacity="0.8" />
+            <feDropShadow dx="0" dy="2" stdDeviation="12" floodColor="#e11d48" floodOpacity="0.4" />
           </filter>
 
           {/* Filtro de resplandor para hover */}
