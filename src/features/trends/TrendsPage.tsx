@@ -24,6 +24,7 @@ import {
   TrendingUp,
   Wind,
 } from 'lucide-react'
+import { normalizeMetrics } from '../measurements/dailyCheckData'
 import {
   Area,
   AreaChart,
@@ -252,17 +253,16 @@ function generateMissionTelemetry(currentDay = 47): TelemetryPoint[] {
       if (Array.isArray(records) && records.length > 0) {
         const latest = records[0]
         if (latest.metrics) {
+          const metrics = normalizeMetrics(latest.metrics)
           const lastPoint = points[points.length - 1]
-          if (latest.metrics.bloodPressureSys) lastPoint.bpSys = latest.metrics.bloodPressureSys
-          if (latest.metrics.bloodPressureDia) lastPoint.bpDia = latest.metrics.bloodPressureDia
-          if (latest.metrics.heartRate) lastPoint.hr = latest.metrics.heartRate
-          if (latest.metrics.bloodSugar) lastPoint.glucose = latest.metrics.bloodSugar
-          if (latest.metrics.bodyTemperature) lastPoint.temp = latest.metrics.bodyTemperature
-          if (latest.metrics.sleepHours) lastPoint.sleep = latest.metrics.sleepHours
-          if (latest.metrics.mood) {
-            const moodMap: Record<string, number> = { Bad: 1, Fair: 2, Neutral: 3, Good: 4, Great: 5 }
-            lastPoint.mood = moodMap[latest.metrics.mood] ?? 4
-          }
+          lastPoint.bpSys = metrics.bloodPressureSys
+          lastPoint.bpDia = metrics.bloodPressureDia
+          lastPoint.hr = metrics.heartRate
+          if (metrics.bloodSugar !== null) lastPoint.glucose = metrics.bloodSugar
+          lastPoint.temp = metrics.bodyTemperature
+          lastPoint.sleep = metrics.sleepHours
+          lastPoint.spo2 = metrics.spo2
+          lastPoint.mood = { Bad: 1, Fair: 2, Neutral: 3, Good: 4, Great: 5 }[metrics.mood] ?? 4
           if (latest.timeStr) lastPoint.timeStr = latest.timeStr
         }
       }

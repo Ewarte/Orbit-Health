@@ -39,6 +39,8 @@ export interface Indicator {
   reason: string
   zone: ZoneId
   history: number[]
+  /** Valores calculados a partir de este indicador (nunca cambian su estado). */
+  derived?: { id: string; label: string; value: string; unit: string }[]
 }
 
 export interface Mission {

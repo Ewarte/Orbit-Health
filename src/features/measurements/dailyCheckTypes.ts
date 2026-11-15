@@ -4,7 +4,14 @@ export interface DailyMetrics {
   bloodPressureSys: number
   bloodPressureDia: number
   heartRate: number
-  bloodSugar: number
+  /** null = no medido (la glucosa no es rutinaria; no hay glucómetro en el botiquín). */
+  bloodSugar: number | null
+  /** Saturación de oxígeno en sangre (%). */
+  spo2: number
+  /** Respiraciones por minuto. */
+  respiratoryRate: number
+  exerciseMinutes: number
+  visionChange: boolean
   bodyTemperature: number
   sleepHours: number
   mood: Mood

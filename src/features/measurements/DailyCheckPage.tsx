@@ -14,6 +14,7 @@ import type { Mission } from '../../types'
 import { DailyCheckAssistant } from './DailyCheckAssistant'
 import { DailyCheckHistory } from './DailyCheckHistory'
 import { DailyMetricCards } from './DailyMetricCards'
+import { steps, type StepId } from './dailyCheckData'
 import type { DailyMetrics } from './dailyCheckTypes'
 import { useDailyCheck } from './useDailyCheck'
 
@@ -30,9 +31,9 @@ export function DailyCheckPage({ mission, onComplete, onNavigate }: Props) {
   const [step, setStep] = useState(0)
   const [draft, setDraft] = useState(check.metrics)
 
-  function openAssistant(stepIndex = 0) {
+  function openAssistant(stepId?: StepId) {
     setDraft({ ...check.metrics })
-    setStep(stepIndex)
+    setStep(Math.max(0, steps.findIndex((item) => item.id === stepId)))
     setAssistantOpen(true)
   }
 
@@ -194,7 +195,7 @@ function StatusHero({
             <p className="text-sm text-mute sm:text-base">
               {completed
                 ? 'You completed your daily check'
-                : 'Record your 6 daily parameters'}
+                : 'Record your daily parameters'}
             </p>
           </div>
         </div>

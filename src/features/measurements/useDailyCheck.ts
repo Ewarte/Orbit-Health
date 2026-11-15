@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { createRecord, CURRENT_METRICS_KEY, defaultMetrics, STORAGE_KEY } from './dailyCheckData'
+import { createRecord, CURRENT_METRICS_KEY, normalizeMetrics, STORAGE_KEY } from './dailyCheckData'
 import type { DailyMetrics, SavedRecord } from './dailyCheckTypes'
 
 function readStorage<T>(key: string, fallback: T): T {
@@ -12,8 +12,12 @@ function readStorage<T>(key: string, fallback: T): T {
 }
 
 export function useDailyCheck(onComplete?: (metrics: DailyMetrics) => void) {
-  const [metrics, setMetrics] = useState(() => readStorage(CURRENT_METRICS_KEY, defaultMetrics))
-  const [savedRecords, setSavedRecords] = useState<SavedRecord[]>(() => readStorage(STORAGE_KEY, []))
+  const [metrics, setMetrics] = useState<DailyMetrics>(() => normalizeMetrics(readStorage<unknown>(CURRENT_METRICS_KEY, null)))
+  const [savedRecords, setSavedRecords] = useState<SavedRecord[]>(() => {
+    const raw = readStorage<unknown>(STORAGE_KEY, [])
+    if (!Array.isArray(raw)) return []
+    return raw.map((record: SavedRecord) => ({ ...record, metrics: normalizeMetrics(record?.metrics) }))
+  })
   const [lastSavedTime, setLastSavedTime] = useState('07:10')
   const [notification, setNotification] = useState<string | null>(null)
 

@@ -4,4 +4,4 @@
 
 **Quién:** R3
 
-**Ahora hay:** Nada todavía. El panel usa datos de demostración de `src/data/mock.ts`.
+**Ahora hay:** `healthEngine.ts` con rangos para presión, pulso, oxígeno, respiración, temperatura, sueño, ánimo y ejercicio, visión y glucosa (solo si se midió), y `derivedBloodPressure` (presión media y de pulso, que no cambian el estado). Los umbrales son un borrador sin validación clínica.

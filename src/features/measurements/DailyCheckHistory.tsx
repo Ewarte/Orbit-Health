@@ -27,7 +27,11 @@ function RecordItem({ record }: { record: SavedRecord }) {
     <div className="grid grid-cols-1 gap-2 text-xs text-mute sm:grid-cols-2 lg:grid-cols-3">
       <span>Presión: <b className="text-text">{metrics.bloodPressureSys}/{metrics.bloodPressureDia} mmHg</b></span>
       <span>Frecuencia: <b className="text-text">{metrics.heartRate} bpm</b></span>
-      <span>Glucosa: <b className="text-text">{metrics.bloodSugar} mg/dL</b></span>
+      <span>Oxígeno: <b className="text-text">{metrics.spo2} %</b></span>
+      <span>Respiración: <b className="text-text">{metrics.respiratoryRate} resp/min</b></span>
+      <span>Ejercicio: <b className="text-text">{metrics.exerciseMinutes} min</b></span>
+      <span>Visión: <b className="text-text">{metrics.visionChange ? 'Cambio notado' : 'Sin cambios'}</b></span>
+      <span>Glucosa: <b className="text-text">{metrics.bloodSugar === null ? '—' : `${metrics.bloodSugar} mg/dL`}</b></span>
       <span>Temperatura: <b className="text-text">{metrics.bodyTemperature.toFixed(1)} °C</b></span>
       <span>Sueño: <b className="text-text">{metrics.sleepHours} h</b></span>
       <span>Ánimo: <b className="text-text">{metrics.mood}</b></span>

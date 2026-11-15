@@ -4,4 +4,4 @@
 
 **Quién:** R5
 
-**Ahora hay:** Nada todavía.
+**Ahora hay:** Chequeo diario con 10 pasos (presión, pulso, oxígeno, respiración, temperatura, sueño, ánimo, ejercicio, visión y glucosa opcional), tarjetas con presión arterial media y de pulso calculadas, historial y lectura segura de registros antiguos (`normalizeMetrics`). Los umbrales con los que se evalúa son un borrador.

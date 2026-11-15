@@ -216,4 +216,50 @@ export const guidanceEntries: GuidanceEntry[] = [
     notify: { es: 'Responsable de ejercicio y oficial médico', en: 'Exercise officer and medical officer' },
     source: { label: 'NASA — Risk of reduced cardiorespiratory and musculoskeletal fitness', url: 'https://www.nasa.gov/reference/risk-of-reduced-cardiorespiratory-and-musculoskeletal-fitness/' },
   },
+  {
+    indicatorId: 'spo2',
+    name: { es: 'Oxígeno en sangre', en: 'Blood oxygen' },
+    basis: 'team',
+    meaning: {
+      es: 'Un oxígeno bajo puede venir de la atmósfera o la presión de la cabina, o de una enfermedad. La explicación es una deducción del equipo.',
+      en: 'Low oxygen can come from the cabin atmosphere or pressure, or from an illness. This explanation is the team’s inference.',
+    },
+    doNow: {
+      es: ['Descansa 5 minutos.', 'Calienta el dedo y repite la lectura.', 'Revisa el estado de oxígeno y la presión de la cabina.'],
+      en: ['Rest for 5 minutes.', 'Warm your finger and repeat the reading.', 'Check the cabin oxygen and pressure status.'],
+    },
+    ifWorse: {
+      es: ['Si hay falta de aire o confusión, para la actividad, sigue el protocolo médico de la tripulación y avisa de inmediato.'],
+      en: ['If there is shortness of breath or confusion, stop the activity, follow the crew medical protocol and report it right away.'],
+    },
+    prevent: {
+      es: ['Vigilar la atmósfera de la cabina.', 'Medir en reposo y con las manos tibias.'],
+      en: ['Monitor the cabin atmosphere.', 'Measure at rest and with warm hands.'],
+    },
+    notify: MEDICAL_OFFICER,
+    source: { label: 'NASA — Evidence Report: in-flight medical conditions (finger oximeter)', url: 'https://ntrs.nasa.gov/api/citations/20170004604/downloads/20170004604.pdf' },
+  },
+  {
+    indicatorId: 'resp',
+    name: { es: 'Frecuencia respiratoria', en: 'Respiratory rate' },
+    basis: 'team',
+    meaning: {
+      es: 'Las respiraciones por minuto en reposo son una señal vital básica. Un cambio puede indicar esfuerzo, enfermedad o un problema de la atmósfera de la cabina. La explicación es una deducción del equipo.',
+      en: 'Breaths per minute at rest are a basic vital sign. A change can point to exertion, illness or a cabin atmosphere problem. This explanation is the team’s inference.',
+    },
+    doNow: {
+      es: ['Cuenta de nuevo tus respiraciones durante 60 segundos, en reposo.', 'Revisa si acabas de hacer esfuerzo.'],
+      en: ['Count your breaths again for 60 seconds, at rest.', 'Check whether you have just exerted yourself.'],
+    },
+    ifWorse: {
+      es: ['Si hay dificultad para respirar, sigue el protocolo médico de la tripulación y avisa de inmediato.'],
+      en: ['If you have difficulty breathing, follow the crew medical protocol and report it right away.'],
+    },
+    prevent: {
+      es: ['Medir siempre en reposo.', 'Vigilar la atmósfera de la cabina.'],
+      en: ['Always measure at rest.', 'Monitor the cabin atmosphere.'],
+    },
+    notify: MEDICAL_OFFICER,
+    source: { label: 'NASA-STD-3001 Technical Brief: Medical Care (vital signs)', url: 'https://www.nasa.gov/wp-content/uploads/2023/03/medical-care-technical-brief-ochmo.pdf' },
+  },
 ]

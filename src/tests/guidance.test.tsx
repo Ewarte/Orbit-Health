@@ -33,9 +33,9 @@ describe('alertas en vivo', () => {
 })
 
 describe('contenido de las guías', () => {
-  it('cubre los 8 indicadores reales y todo está en los dos idiomas', () => {
+  it('cubre los 10 indicadores reales y todo está en los dos idiomas', () => {
     expect(guidanceEntries.map((entry) => entry.indicatorId).sort()).toEqual(
-      ['bp', 'exercise', 'glucose', 'hr', 'mood', 'sleep', 'temp', 'vision'],
+      ['bp', 'exercise', 'glucose', 'hr', 'mood', 'resp', 'sleep', 'spo2', 'temp', 'vision'],
     )
     for (const entry of guidanceEntries) {
       for (const lang of ['es', 'en'] as const) {
