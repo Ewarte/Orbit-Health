@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
 import {
   Activity,
+  ArrowRight,
   Calendar,
   CheckCircle2,
   ChevronDown,
@@ -401,11 +402,19 @@ export function TrendsPage({ mission, onNavigate }: Props) {
           </div>
 
           {onNavigate && (
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => onNavigate('mission')}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-edge bg-panel px-3.5 py-2.5 text-xs font-semibold text-text transition-colors hover:border-[#5cc98b]/50 hover:bg-[#1c3f5e] cursor-pointer"
+              >
+                <span>Simulación de Misión</span>
+                <ArrowRight className="h-3.5 w-3.5 text-[#5cc98b]" />
+              </button>
               <button
                 type="button"
                 onClick={() => onNavigate('check')}
-                className="inline-flex items-center gap-2 rounded-xl border border-edge bg-panel px-4 py-2.5 text-sm font-semibold text-text transition-colors hover:border-[#5cc98b]/50 hover:bg-[#1c3f5e] cursor-pointer"
+                className="inline-flex items-center gap-2 rounded-xl border border-edge bg-panel px-4 py-2.5 text-xs font-semibold text-text transition-colors hover:border-[#5cc98b]/50 hover:bg-[#1c3f5e] cursor-pointer"
               >
                 <Clock className="h-4 w-4 text-[#5cc98b]" />
                 <span>Ir al Chequeo Diario</span>

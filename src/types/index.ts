@@ -45,6 +45,59 @@ export interface Mission {
   day: number
   place: string
   lastCheck: string
+  phase?: string
+  totalDays?: number
+  distanceEarthKm?: number
+  distanceTargetKm?: number
+  cabinPressureKpa?: number
+  cabinOxygenPercent?: number
+  cabinCo2Percent?: number
+  cabinTempCelsius?: number
+  radiationDoseTotalMsv?: number
+  crewReadinessIndex?: number
+  crewMembersCount?: number
+}
+
+export type RoutineCategory = 'exercise' | 'medical' | 'nutrition' | 'cabin' | 'rest' | 'protocol'
+
+export interface RoutineTask {
+  id: string
+  title: string
+  description?: string
+  category: RoutineCategory
+  timeStr: string
+  durationMin: number
+  completed: boolean
+  mandatory: boolean
+  sourceRecommendation?: string
+  targetIndicatorId?: string
+  impact: string
+  completedAt?: string
+}
+
+export interface MissionTrendPoint {
+  day: number
+  dateStr: string
+  distanceEarthKm: number
+  cumulativeRadiationMsv: number
+  cabinPressureKpa: number
+  cabinCo2Percent: number
+  exerciseComplianceScore: number
+  readinessIndex: number
+}
+
+export interface GuidanceProtocol {
+  id: string
+  title: string
+  category: string
+  targetRisk: string
+  severity: Status
+  summary: string
+  rationale: string
+  actionSteps: string[]
+  recommendedTaskTitle?: string
+  recommendedCategory?: RoutineCategory
+  recommendedDurationMin?: number
 }
 
 export interface Zone {
