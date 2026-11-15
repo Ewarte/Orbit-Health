@@ -3,13 +3,14 @@ import {
   DIMMED_OPACITY,
   GHOST_OPACITY,
   ZONE_OF_MESH,
-  alignBox,
   boxCenter,
-  computeAlignment,
+  easeInOutCubic,
   fitDistance,
   meshOpacity,
   meshesOfZone,
+  normalizePoint,
   organId,
+  shiftBox,
   unionBoxes,
   type Box,
 } from '../components/health/holoZonas'
@@ -69,22 +70,32 @@ describe('holograma unificado: qué se muestra por zona', () => {
   })
 })
 
-describe('holograma unificado: alineación y cámara', () => {
-  const human: Box = { min: [-0.5, -0.98, -0.2], max: [0.5, 0.98, 0.2] }
-  const anatomy: Box = { min: [-0.3, 0.1, 0.0], max: [0.3, 1.9, 0.2] }
-
-  it('iguala la altura del modelo anatómico con la de la malla de alambre', () => {
-    const a = computeAlignment(human, anatomy)
-    const placed = alignBox(anatomy, a)
-    expect(placed.max[1] - placed.min[1]).toBeCloseTo(1.96, 6)
+describe('holograma unificado: encuadre y transición', () => {
+  it('centra la caja del cuerpo desplazándola', () => {
+    const skin: Box = { min: [-0.33, -0.08, -0.05], max: [0.33, 1.64, 0.25] }
+    const c = boxCenter(skin)
+    const centered = shiftBox(skin, [-c[0], -c[1], -c[2]])
+    expect(boxCenter(centered)[0]).toBeCloseTo(0, 6)
+    expect(boxCenter(centered)[1]).toBeCloseTo(0, 6)
+    expect(boxCenter(centered)[2]).toBeCloseTo(0, 6)
+    expect(centered.max[1] - centered.min[1]).toBeCloseTo(1.72, 6)
   })
 
-  it('alinea pies, centro lateral y profundidad', () => {
-    const a = computeAlignment(human, anatomy)
-    const placed = alignBox(anatomy, a)
-    expect(placed.min[1]).toBeCloseTo(human.min[1], 6)
-    expect(boxCenter(placed)[0]).toBeCloseTo(0, 6)
-    expect(boxCenter(placed)[2]).toBeCloseTo(0, 6)
+  it('normaliza con la altura de la caja: pies en 0, cabeza en 1, centro lateral en 0', () => {
+    const skin: Box = { min: [-0.33, -0.08, -0.05], max: [0.33, 1.64, 0.25] }
+    expect(normalizePoint([0, -0.08, 0.1], skin)).toEqual({ u: 0, v: 0, w: 0 })
+    expect(normalizePoint([0, 1.64, 0.1], skin).v).toBeCloseTo(1, 6)
+    expect(normalizePoint([0.172, 0.78, 0.1], skin).u).toBeCloseTo(0.1, 6)
+  })
+
+  it('la transición es suave: empieza y termina en 0 y 1, y es simétrica', () => {
+    expect(easeInOutCubic(0)).toBe(0)
+    expect(easeInOutCubic(1)).toBe(1)
+    expect(easeInOutCubic(0.5)).toBeCloseTo(0.5, 6)
+    expect(easeInOutCubic(0.1)).toBeLessThan(0.1)
+    expect(easeInOutCubic(0.9)).toBeGreaterThan(0.9)
+    expect(easeInOutCubic(-1)).toBe(0)
+    expect(easeInOutCubic(2)).toBe(1)
   })
 
   it('una caja de zona es la unión de las cajas de sus mallas', () => {

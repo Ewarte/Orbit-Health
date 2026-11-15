@@ -51,8 +51,7 @@ Orbit-Health/
 ├── vite.config.ts          Configuración de Vite (React + Tailwind) y de las pruebas
 ├── docs/                   Decisiones e informes de investigación
 ├── public/
-│   ├── humano.glb          Silueta 3D (vista general del holograma)
-│   ├── anatomia.glb        Órganos y esqueleto (BodyParts3D, CC BY 4.0)
+│   ├── anatomia.glb        Modelo 3D único: piel (silueta), órganos y esqueleto (BodyParts3D, CC BY 4.0)
 │   └── ATRIBUCIONES.md     Licencia y partes del modelo anatómico
 └── src/
     ├── main.tsx            Arranque de React y proveedor de idiomas

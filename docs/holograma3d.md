@@ -1,6 +1,6 @@
 # Implementación del Holograma 3D Interactivo (Orbit-Health)
 
-> **Nota (2026-11-15):** este documento describe la primera versión (`Holograma3D.tsx`), que ya no existe. Hoy la pantalla «Hoy» usa `src/components/health/HologramaUnificado.tsx`: vista general con `humano.glb` y zoom a los órganos de `anatomia.glb` (BodyParts3D). El motivo está en [DECISIONES.md §8](DECISIONES.md). Se conserva como historia del diseño.
+> **Nota (2026-11-15):** este documento describe la primera versión (`Holograma3D.tsx` con `humano.glb`); ambos ya no existen. Hoy la pantalla «Hoy» usa `src/components/health/HologramaUnificado.tsx` con un solo modelo, `anatomia.glb` (BodyParts3D): su piel como silueta de alambre y zoom a órganos y huesos. El motivo está en [DECISIONES.md §8](DECISIONES.md). Se conserva como historia del diseño.
 
 Este documento detalla la integración del modelo biomédico tridimensional `/humano.glb` en la interfaz orbital de **Orbit-Health**, dotándolo de interactividad anatómica bidireccional en tiempo real mediante WebGL y Three.js.
 

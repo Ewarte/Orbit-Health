@@ -63,8 +63,9 @@ Registro de las decisiones tomadas del 14 al 15 de noviembre de 2026, con el mot
 - **Evidencia:** [INVESTIGACION-TABLETS.md](INVESTIGACION-TABLETS.md).
 
 ### 8. Holograma: un solo modelo con zoom a los órganos
-- **Decisión:** vista general con la silueta de alambre (`public/humano.glb`) y, al elegir una zona o un órgano, zoom con los órganos y huesos reales (`public/anatomia.glb`).
+- **Decisión:** un solo modelo, `public/anatomia.glb`. Vista general con su piel dibujada como silueta de alambre translúcida y, al elegir una zona o un órgano, zoom suave a los órganos y huesos reales.
 - **Por qué:** el reto sugiere una figura humana en la que cada parte se pueda tocar ([RETO.md](RETO.md), Objectives). La vista general da el panorama; el zoom muestra el órgano concreto.
+- **Por qué un solo modelo:** con la silueta anterior (`humano.glb`, brazos abiertos) el esqueleto de BodyParts3D (brazos pegados al cuerpo) quedaba superpuesto sin relación. Usar la piel del mismo modelo hace coincidir silueta, órganos y huesos. `humano.glb` se retiró.
 - **Licencia:** BodyParts3D, © The Database Center for Life Science, **CC BY 4.0** según su página oficial: gratuito, exige atribución, que se muestra bajo el holograma.
 - **Evidencia:** [INVESTIGACION-MODELO3D.md](INVESTIGACION-MODELO3D.md) y [../public/ATRIBUCIONES.md](../public/ATRIBUCIONES.md).
 - **Límite:** el conjunto de datos descargado no incluye el bazo.

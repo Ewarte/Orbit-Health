@@ -50,6 +50,6 @@ Zona «Huesos y músculos» (esqueleto completo):
 - `tibia_der`, `tibia_izq`: right tibia (FMA24477) y right fibula (FMA24480); left tibia (FMA24478) y left fibula (FMA24481).
 - `pie_der`, `pie_izq`: huesos del pie, right foot (FMA11343) y left foot (FMA11344), con tarso, metatarsianos y falanges.
 
-## Modelo de malla de alambre (Versión A)
+## Silueta de la vista general
 
-Archivo: `public/humano.glb` (modelo original del proyecto; su atribución no se modificó en esta tarea).
+La silueta de alambre es la malla `piel` de este mismo modelo (BodyParts3D), así que silueta, órganos y huesos comparten postura. El modelo anterior (`humano.glb`) se retiró del proyecto el 2026-11-15.

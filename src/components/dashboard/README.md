@@ -4,4 +4,4 @@
 
 **Quién:** R4 (Diego)
 
-**Ahora hay:** `DashboardPage.tsx`, `IndicatorTile.tsx`.
+**Ahora hay:** `DashboardPage.tsx`: holograma unificado y panel lateral plegable con lo que pide atención.

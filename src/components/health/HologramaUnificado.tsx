@@ -11,57 +11,75 @@ import {
   HIGHLIGHT,
   ZONE_META,
   ZONE_OF_MESH,
-  alignBox,
   boxCenter,
-  computeAlignment,
+  boxSize,
+  easeInOutCubic,
   fitDistance,
   getStatusColor,
+  getTouchZone,
   getVertexZone,
   isZoneLit,
   meshOpacity,
   meshesOfZone,
+  normalizePoint,
   organId,
+  shiftBox,
   unionBoxes,
-  type Alignment,
   type Box,
   type Vec3,
 } from './holoZonas'
 
 /* ═══════════════════════════════════════════════════════════════════════
    HOLOGRAMA UNIFICADO
-   Vista general: silueta de alambre (humano.glb), coloreada por zona.
-   Al elegir una zona la cámara se acerca y aparecen sus órganos y huesos (anatomia.glb).
+   Todo sale de public/anatomia.glb (BodyParts3D), así silueta, órganos y huesos comparten postura.
+   Vista general: la piel dibujada como malla de alambre, coloreada por zona.
+   Al elegir una zona la cámara se acerca y aparecen sus órganos y huesos.
    Al tocar un órgano, el zoom se cierra sobre él y aparece su nombre.
    ═══════════════════════════════════════════════════════════════════════ */
 
 const SKIN = 'piel'
-const HUMAN_URL = '/humano.glb'
 const ANATOMY_URL = '/anatomia.glb'
 
-/** Posición de la baliza de cada zona (coordenadas del cuerpo centrado), igual que en la versión A. */
-const BEACON_POS: Record<ZoneId, [number, number, number]> = {
-  head: [0.2, 0.84, 0],
-  heart: [0.05, 0.48, 0],
-  metabolism: [0, 0.1, 0],
-  body: [0.18, 0.3, 0],
-  legs: [0.1, -0.55, 0],
+/**
+ * Posición de cada baliza en coordenadas normalizadas del cuerpo (lado, altura, profundidad; ver `normalizePoint`).
+ * Van sobre la superficie y lejos de la cara: sien, lado izquierdo del pecho, abdomen, costado del tronco y rodilla.
+ */
+const BEACON_NORM: Record<ZoneId, Vec3> = {
+  head: [0.052, 0.945, -0.005],
+  heart: [0.032, 0.76, 0.075],
+  metabolism: [0, 0.6, 0.075],
+  body: [-0.066, 0.79, 0.02],
+  legs: [-0.05, 0.27, 0.04],
 }
 
 /** Dirección de la cámara en la vista inicial (hacia el frente, algo elevada). */
 const DEFAULT_DIR = new THREE.Vector3(0, 0.12, 1).normalize()
 const FOV = 45
-const ANIM_SECONDS = 0.7
+/** Duración de las transiciones (cámara y opacidades). */
+const ANIM_SECONDS = 1.1
+
+/** Opacidad de la silueta de alambre en cada situación. */
+// La piel de BodyParts3D es una malla muy densa: las líneas se acumulan, así que la opacidad va baja.
+const WIRE_OPACITY = { general: 0.035, zoom: 0.025, organ: 0.015, body: 0.06 }
 
 interface View {
   /** Hay zoom a la zona elegida. */
   zoomed: boolean
   /** Malla de anatomia.glb tocada (zoom más cercano), o null. */
   organ: string | null
-  /** Cambia en cada «Reiniciar vista» para volver a encuadrar aunque la vista no cambie. */
+  /** Cambia en cada «Vista general» para volver a encuadrar de frente aunque la vista no cambie. */
   resetKey: number
 }
 
 type Controls = { target: THREE.Vector3; update: () => void }
+
+function prefersReducedMotion(): boolean {
+  try {
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  } catch {
+    return false
+  }
+}
 
 /** Caja local de una malla, con las transformaciones de sus nodos hasta la raíz de la escena (inclusive). */
 function meshBox(mesh: THREE.Mesh, root: THREE.Object3D): Box {
@@ -86,36 +104,37 @@ function sceneBoxes(root: THREE.Object3D): Map<string, Box> {
 }
 
 interface Layout {
-  /** Desplazamiento que centra el cuerpo de alambre en el origen (igual que `Center` en la versión A). */
+  /** Desplazamiento que centra el cuerpo en el origen. */
   offset: Vec3
-  align: Alignment
-  /** Cajas de cada malla anatómica en el espacio ya centrado y alineado. */
+  /** Cajas de cada malla anatómica ya centradas. */
   boxes: Map<string, Box>
-  /** Caja de toda la silueta de alambre, centrada. */
+  /** Caja de la silueta (la piel), centrada. */
   body: Box
+  /** Posición de cada baliza en el espacio centrado. */
+  beacons: Record<ZoneId, Vec3>
 }
 
-function useLayout(human: THREE.Object3D, anatomy: THREE.Object3D): Layout {
+function useLayout(anatomy: THREE.Object3D): Layout {
   return useMemo(() => {
-    const humanBox = unionBoxes([...sceneBoxes(human).values()])!
     const raw = sceneBoxes(anatomy)
-    // La piel es la silueta del modelo anatómico: con ella se iguala la altura con la malla de alambre.
-    const anatomyBox = raw.get(SKIN) ?? unionBoxes([...raw.values()])!
-    const align = computeAlignment(humanBox, anatomyBox)
-    const c = boxCenter(humanBox)
+    const skin = raw.get(SKIN) ?? unionBoxes([...raw.values()])!
+    const c = boxCenter(skin)
     const offset: Vec3 = [-c[0], -c[1], -c[2]]
     const boxes = new Map<string, Box>()
-    raw.forEach((b, name) => boxes.set(name, alignBox(b, align, offset)))
-    const body = alignBox(humanBox, { scale: 1, position: [0, 0, 0] }, offset)
-    return { offset, align, boxes, body }
-  }, [human, anatomy])
+    raw.forEach((b, name) => boxes.set(name, shiftBox(b, offset)))
+    const body = shiftBox(skin, offset)
+    const height = boxSize(body)[1]
+    const at = ([u, v, w]: Vec3): Vec3 => [u * height, body.min[1] + v * height, w * height]
+    const beacons = {} as Record<ZoneId, Vec3>
+    for (const z of ZONE_META) beacons[z.id] = at(BEACON_NORM[z.id])
+    return { offset, boxes, body, beacons }
+  }, [anatomy])
 }
 
 /* ─── Modelo ─── */
 
 interface ModelProps {
   layout: Layout
-  human: THREE.Object3D
   anatomy: THREE.Object3D
   selectedZone: ZoneId
   view: View
@@ -124,8 +143,79 @@ interface ModelProps {
   onSelectOrgan: (mesh: string) => void
 }
 
-function Model({ layout, human, anatomy, selectedZone, view, zonesStatus, onSelectZone, onSelectOrgan }: ModelProps) {
+/** Asigna el material de alambre a la piel y colorea cada vértice según su zona. */
+function paintSkin(skin: THREE.Mesh, material: THREE.Material, zones: Uint8Array, selected: ZoneId) {
+  const ids = ZONE_META.map((z) => z.id)
+  skin.material = material
+  let attr = skin.geometry.attributes.color as THREE.BufferAttribute | undefined
+  if (!attr || attr.count !== zones.length) {
+    attr = new THREE.BufferAttribute(new Float32Array(zones.length * 3), 3)
+    skin.geometry.setAttribute('color', attr)
+  }
+  const colors = attr.array as Float32Array
+  for (let i = 0; i < zones.length; i++) {
+    const on = isZoneLit(selected, ids[zones[i]])
+    colors[i * 3] = on ? 1.0 : 0.1
+    colors[i * 3 + 1] = on ? 0.12 : 0.8
+    colors[i * 3 + 2] = on ? 0.3 : 0.95
+  }
+  attr.needsUpdate = true
+}
+
+/** Opacidad de una malla que se interpola con la curva de la transición. */
+interface Tween {
+  cur: number
+  from: number
+  to: number
+  t0: number
+  apply: (v: number) => void
+}
+
+function Model({ layout, anatomy, selectedZone, view, zonesStatus, onSelectZone, onSelectOrgan }: ModelProps) {
   const invalidate = useThree((s) => s.invalidate)
+  const tweens = useRef(new Map<string, Tween>())
+
+  /** Fija la opacidad que debe alcanzar `key`; si cambia, se interpola (o salta si se prefiere menos movimiento). */
+  const setTarget = useCallback((key: string, to: number, apply: (v: number) => void) => {
+    const tw = tweens.current.get(key)
+    if (!tw) {
+      tweens.current.set(key, { cur: to, from: to, to, t0: 0, apply })
+      apply(to)
+      return
+    }
+    tw.apply = apply
+    if (tw.to === to) return
+    tw.from = tw.cur
+    tw.to = to
+    tw.t0 = performance.now()
+    if (prefersReducedMotion()) {
+      tw.cur = to
+      apply(to)
+    }
+  }, [])
+
+  useFrame(() => {
+    const now = performance.now()
+    let active = false
+    tweens.current.forEach((tw) => {
+      if (tw.cur === tw.to) return
+      const p = Math.min(1, (now - tw.t0) / (ANIM_SECONDS * 1000))
+      tw.cur = p >= 1 ? tw.to : tw.from + (tw.to - tw.from) * easeInOutCubic(p)
+      tw.apply(tw.cur)
+      if (p < 1) active = true
+    })
+    if (active) invalidate()
+  })
+
+  // La piel es la silueta de alambre.
+  const skin = useMemo(() => {
+    let found: THREE.Mesh | null = null
+    anatomy.traverse((child) => {
+      const mesh = child as THREE.Mesh
+      if (mesh.isMesh && mesh.name === SKIN) found = mesh
+    })
+    return found as THREE.Mesh | null
+  }, [anatomy])
 
   const wireMaterial = useMemo(
     () =>
@@ -133,67 +223,57 @@ function Model({ layout, human, anatomy, selectedZone, view, zonesStatus, onSele
         vertexColors: true,
         wireframe: true,
         transparent: true,
-        opacity: 0.28,
-        blending: THREE.AdditiveBlending,
+        opacity: WIRE_OPACITY.general,
         depthWrite: false,
       }),
     [],
   )
 
-  // Zona de cada vértice de la malla de alambre, calculada una vez por malla.
-  const zoneMaps = useMemo(() => {
-    const maps = new Map<THREE.Mesh, Uint8Array>()
+  // Caja de la piel en su propio espacio (con ella se normalizan los vértices) y zona de cada vértice.
+  const skinData = useMemo(() => {
+    if (!skin) return null
+    const geo = skin.geometry
+    if (!geo.boundingBox) geo.computeBoundingBox()
+    const bb = geo.boundingBox!
+    const box: Box = { min: [bb.min.x, bb.min.y, bb.min.z], max: [bb.max.x, bb.max.y, bb.max.z] }
+    const pos = geo.attributes.position
     const ids = ZONE_META.map((z) => z.id)
-    human.traverse((child) => {
-      const mesh = child as THREE.Mesh
-      if (!mesh.isMesh) return
-      const pos = mesh.geometry.attributes.position
-      const map = new Uint8Array(pos.count)
-      for (let i = 0; i < pos.count; i++) map[i] = ids.indexOf(getVertexZone(pos.getX(i), pos.getZ(i)))
-      maps.set(mesh, map)
-    })
-    return maps
-  }, [human])
+    const zones = new Uint8Array(pos.count)
+    for (let i = 0; i < pos.count; i++) {
+      const n = normalizePoint([pos.getX(i), pos.getY(i), pos.getZ(i)], box)
+      zones[i] = ids.indexOf(getVertexZone(n.u, n.v))
+    }
+    return { box, zones }
+  }, [skin])
 
-  // Colores de la malla de alambre: la zona elegida en rojo y el resto en cian («Cuerpo entero» enciende todo).
+  // Colores de la silueta: la zona elegida en rojo y el resto en cian («Cuerpo entero» enciende todo).
   useEffect(() => {
-    const ids = ZONE_META.map((z) => z.id)
-    zoneMaps.forEach((map, mesh) => {
-      mesh.material = wireMaterial
-      const count = map.length
-      let attr = mesh.geometry.attributes.color as THREE.BufferAttribute | undefined
-      if (!attr || attr.count !== count) {
-        attr = new THREE.BufferAttribute(new Float32Array(count * 3), 3)
-        mesh.geometry.setAttribute('color', attr)
-      }
-      const colors = attr.array as Float32Array
-      for (let i = 0; i < count; i++) {
-        const on = isZoneLit(selectedZone, ids[map[i]])
-        colors[i * 3] = on ? 1.0 : 0.0
-        colors[i * 3 + 1] = on ? 0.12 : 0.9
-        colors[i * 3 + 2] = on ? 0.3 : 1.0
-      }
-      attr.needsUpdate = true
+    if (!skin || !skinData) return
+    paintSkin(skin, wireMaterial, skinData.zones, selectedZone)
+    invalidate()
+  }, [skin, skinData, wireMaterial, selectedZone, invalidate])
+
+  // Con zoom la silueta se atenúa para dejar ver los órganos; «Cuerpo entero» la resalta.
+  useEffect(() => {
+    const opacity = !view.zoomed
+      ? WIRE_OPACITY.general
+      : selectedZone === 'body'
+        ? WIRE_OPACITY.body
+        : view.organ
+          ? WIRE_OPACITY.organ
+          : WIRE_OPACITY.zoom
+    setTarget('wire', opacity, (v) => {
+      wireMaterial.opacity = v
     })
     invalidate()
-  }, [zoneMaps, wireMaterial, selectedZone, invalidate])
+  }, [wireMaterial, view.zoomed, view.organ, selectedZone, setTarget, invalidate])
 
-  // Con zoom la malla se atenúa para dejar ver los órganos; «Cuerpo entero» la resalta.
-  useEffect(() => {
-    const zoomedIn = view.zoomed && selectedZone !== 'body'
-    const opacity = selectedZone === 'body' && view.zoomed ? 0.55 : zoomedIn ? (view.organ ? 0.05 : 0.09) : 0.28
-    zoneMaps.forEach((_, mesh) => {
-      ;(mesh.material as THREE.Material).opacity = opacity
-    })
-    invalidate()
-  }, [zoneMaps, view.zoomed, view.organ, selectedZone, invalidate])
-
-  // Un material por malla anatómica.
+  // Un material por malla anatómica (la piel usa el de alambre).
   const materials = useMemo(() => {
     const map = new Map<string, THREE.MeshStandardMaterial>()
     anatomy.traverse((child) => {
       const mesh = child as THREE.Mesh
-      if (!mesh.isMesh) return
+      if (!mesh.isMesh || mesh.name === SKIN) return
       map.set(mesh.name, new THREE.MeshStandardMaterial({ roughness: 0.55, metalness: 0.1, side: THREE.DoubleSide }))
     })
     return map
@@ -202,52 +282,66 @@ function Model({ layout, human, anatomy, selectedZone, view, zonesStatus, onSele
   useEffect(() => {
     anatomy.traverse((child) => {
       const mesh = child as THREE.Mesh
-      if (!mesh.isMesh) return
+      if (!mesh.isMesh || mesh.name === SKIN) return
       if (!mesh.geometry.attributes.normal) mesh.geometry.computeVertexNormals()
       mesh.material = materials.get(mesh.name) ?? mesh.material
     })
   }, [anatomy, materials])
 
-  // Visibilidad, opacidad y color de cada órgano o hueso.
+  // Visibilidad, opacidad (interpolada) y color de cada órgano o hueso.
   useEffect(() => {
     const base = new THREE.Color()
     anatomy.traverse((child) => {
       const mesh = child as THREE.Mesh
-      if (!mesh.isMesh) return
+      if (!mesh.isMesh || mesh.name === SKIN) return
       const material = materials.get(mesh.name)
       if (!material) return
-      const opacity = meshOpacity(mesh.name, selectedZone, view.zoomed, view.organ)
-      mesh.visible = opacity > 0
-      material.opacity = opacity
-      material.transparent = opacity < 1
-      material.depthWrite = opacity >= 0.99
       const zone = ZONE_OF_MESH[mesh.name]
       base.set(getStatusColor(zone ? zonesStatus?.[zone] : undefined))
       material.color.copy(base)
       material.emissive.copy(base)
       material.emissiveIntensity = view.organ === mesh.name ? 0.75 : 0.3
-      material.needsUpdate = true
-      mesh.renderOrder = opacity < 1 ? 2 : 1
+      setTarget(mesh.name, meshOpacity(mesh.name, selectedZone, view.zoomed, view.organ), (v) => {
+        const wasTransparent = material.transparent
+        mesh.visible = v > 0.003
+        material.opacity = v
+        material.transparent = v < 0.99
+        material.depthWrite = v >= 0.99
+        if (wasTransparent !== material.transparent) material.needsUpdate = true
+        mesh.renderOrder = v < 0.99 ? 2 : 1
+      })
     })
     invalidate()
-  }, [anatomy, materials, selectedZone, view.zoomed, view.organ, zonesStatus, invalidate])
+  }, [anatomy, materials, selectedZone, view.zoomed, view.organ, zonesStatus, setTarget, invalidate])
 
-  /** Qué se tocó: un órgano visible de la zona (con zoom) o, si no, la zona de la malla de alambre. */
+  /** Zona de la piel bajo el toque: se promedian los tres vértices de la cara tocada. */
+  function skinZoneAt(hit: THREE.Intersection): ZoneId | null {
+    if (!skinData || !skin || !hit.face) return null
+    const pos = skin.geometry.attributes.position
+    const { a, b, c } = hit.face
+    const p: Vec3 = [
+      (pos.getX(a) + pos.getX(b) + pos.getX(c)) / 3,
+      (pos.getY(a) + pos.getY(b) + pos.getY(c)) / 3,
+      (pos.getZ(a) + pos.getZ(b) + pos.getZ(c)) / 3,
+    ]
+    const n = normalizePoint(p, skinData.box)
+    return getTouchZone(n.u, n.v, n.w)
+  }
+
+  /** Qué se tocó: un órgano visible de la zona (con zoom) o, si no, la zona de la piel. */
   function pick(e: ThreeEvent<PointerEvent | MouseEvent>): { organ?: string; zone?: ZoneId } | null {
-    // Primero los órganos visibles (la malla de alambre queda por delante pero es solo la envoltura)...
+    // Primero los órganos visibles (la piel de alambre solo es la envoltura)...
     for (const hit of e.intersections) {
       const obj = hit.object as THREE.Mesh
-      if (zoneMaps.has(obj)) continue
+      if (obj === skin) continue
       // Las mallas ocultas o casi transparentes no se pueden tocar.
       const solid = obj.visible && meshOpacity(obj.name, selectedZone, view.zoomed, view.organ) >= 0.25
-      if (solid && obj.name !== SKIN) return { organ: obj.name }
+      if (solid) return { organ: obj.name }
     }
-    // ...y si no hay ninguno, la zona de la malla de alambre.
+    // ...y si no hay ninguno, la zona de la piel.
     for (const hit of e.intersections) {
-      const map = zoneMaps.get(hit.object as THREE.Mesh)
-      const idx = hit.face?.a
-      if (!map || idx === undefined) continue
-      const zone = ZONE_META[map[idx]]?.id
+      if (hit.object !== skin) continue
+      const zone = skinZoneAt(hit)
       if (zone) return { zone }
     }
     return null
@@ -272,10 +366,7 @@ function Model({ layout, human, anatomy, selectedZone, view, zonesStatus, onSele
 
   return (
     <group position={layout.offset}>
-      <primitive object={human} {...handlers} />
-      <group position={layout.align.position} scale={layout.align.scale}>
-        <primitive object={anatomy} {...handlers} />
-      </group>
+      <primitive object={anatomy} {...handlers} />
     </group>
   )
 }
@@ -284,18 +375,20 @@ function Model({ layout, human, anatomy, selectedZone, view, zonesStatus, onSele
 
 function ZoneBeacon({
   id,
+  position,
   isSelected,
   status,
   onSelect,
 }: {
   id: ZoneId
+  position: Vec3
   isSelected: boolean
   status?: Status
   onSelect: (id: ZoneId) => void
 }) {
   const color = isSelected ? HIGHLIGHT : getStatusColor(status)
   return (
-    <group position={BEACON_POS[id]} scale={isSelected ? 1.2 : 1}>
+    <group position={position} scale={isSelected ? 1.25 : 1}>
       <mesh
         renderOrder={10}
         onClick={(e: ThreeEvent<MouseEvent>) => {
@@ -310,12 +403,12 @@ function ZoneBeacon({
           document.body.style.cursor = 'auto'
         }}
       >
-        <sphereGeometry args={[isSelected ? 0.05 : 0.038, 16, 16]} />
-        <meshBasicMaterial color={isSelected ? '#ffffff' : color} transparent opacity={isSelected ? 1 : 0.9} depthTest={false} />
+        <sphereGeometry args={[0.013, 16, 16]} />
+        <meshBasicMaterial color={isSelected ? '#ffffff' : color} transparent opacity={isSelected ? 1 : 0.85} depthTest={false} />
       </mesh>
       <mesh renderOrder={9}>
-        <sphereGeometry args={[isSelected ? 0.09 : 0.06, 16, 16]} />
-        <meshBasicMaterial color={color} transparent opacity={isSelected ? 0.3 : 0.18} depthWrite={false} depthTest={false} />
+        <sphereGeometry args={[0.026, 16, 16]} />
+        <meshBasicMaterial color={color} transparent opacity={isSelected ? 0.3 : 0.16} depthWrite={false} depthTest={false} />
       </mesh>
     </group>
   )
@@ -328,14 +421,6 @@ interface Goal {
   margin: number
   /** Si es true, la cámara vuelve a mirar de frente; si no, conserva el ángulo actual. */
   resetDir: boolean
-}
-
-function prefersReducedMotion(): boolean {
-  try {
-    return window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  } catch {
-    return false
-  }
 }
 
 function CameraRig({ goal, controlsRef }: { goal: Goal; controlsRef: RefObject<Controls | null> }) {
@@ -381,7 +466,7 @@ function CameraRig({ goal, controlsRef }: { goal: Goal; controlsRef: RefObject<C
     const controls = controlsRef.current
     if (!a || !controls) return
     a.t = Math.min(1, a.t + delta / ANIM_SECONDS)
-    const k = 1 - Math.pow(1 - a.t, 3)
+    const k = easeInOutCubic(a.t)
     controls.target.lerpVectors(a.fromTarget, a.toTarget, k)
     const dist = a.fromDist + (a.toDist - a.fromDist) * k
     camera.position.copy(controls.target).addScaledVector(a.dir, dist)
@@ -423,9 +508,8 @@ function SideOffset({ shift }: { shift: number }) {
 }
 
 function Scene({ selectedZone, view, zonesStatus, autoRotate, onSelectZone, onSelectOrgan, organLabel }: SceneProps) {
-  const human = useGLTF(HUMAN_URL).scene
   const anatomy = useGLTF(ANATOMY_URL, false, true).scene
-  const layout = useLayout(human, anatomy)
+  const layout = useLayout(anatomy)
   const controlsRef = useRef<Controls | null>(null)
 
   const goal = useMemo<Goal>(() => {
@@ -464,7 +548,6 @@ function Scene({ selectedZone, view, zonesStatus, autoRotate, onSelectZone, onSe
       <directionalLight position={[-3, 1, -2]} intensity={1.2} color="#7fd8ff" />
       <Model
         layout={layout}
-        human={human}
         anatomy={anatomy}
         selectedZone={selectedZone}
         view={view}
@@ -474,7 +557,7 @@ function Scene({ selectedZone, view, zonesStatus, autoRotate, onSelectZone, onSe
       />
       {!view.zoomed &&
         ZONE_META.map((zone) => (
-          <ZoneBeacon key={zone.id} id={zone.id} isSelected={selectedZone === zone.id} status={zonesStatus?.[zone.id]} onSelect={onSelectZone} />
+          <ZoneBeacon key={zone.id} id={zone.id} position={layout.beacons[zone.id]} isSelected={selectedZone === zone.id} status={zonesStatus?.[zone.id]} onSelect={onSelectZone} />
         ))}
       {labelPos && organLabel && (
         <Html position={labelPos} center zIndexRange={[40, 0]} style={{ pointerEvents: 'none' }}>
@@ -499,7 +582,6 @@ function Scene({ selectedZone, view, zonesStatus, autoRotate, onSelectZone, onSe
   )
 }
 
-useGLTF.preload(HUMAN_URL)
 // Sin Draco (que descarga su decodificador de internet): el archivo usa meshopt, que viene incluido.
 useGLTF.preload(ANATOMY_URL, false, true)
 
@@ -550,15 +632,13 @@ export function HologramaUnificado({ selectedZone = 'heart', onSelectZone, zones
       zonesStatus={zonesStatus}
       indicators={indicators}
       className={className}
-      onResetView={goGeneral}
       focused={view.zoomed}
       note={t('holo.attribution')}
       toolbar={
         <button
           type="button"
           onClick={goGeneral}
-          disabled={!view.zoomed}
-          className="flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-xl border border-cyan-500/40 bg-cyan-950/60 px-4 font-mono text-xs uppercase tracking-wide text-cyan-200 transition-colors hover:border-cyan-300 hover:bg-cyan-900/70 focus-visible:outline-2 focus-visible:outline-cyan-300 disabled:opacity-40 disabled:hover:border-cyan-500/40 disabled:hover:bg-cyan-950/60"
+          className="flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-xl border border-cyan-500/40 bg-cyan-950/60 px-4 font-mono text-xs uppercase tracking-wide text-cyan-200 transition-colors hover:border-cyan-300 hover:bg-cyan-900/70 focus-visible:outline-2 focus-visible:outline-cyan-300"
         >
           {t('holo.overview')}
         </button>

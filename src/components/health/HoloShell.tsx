@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import type { Indicator, Status, ZoneId } from '../../types'
 import { statusUi } from '../../lib/status'
 import { indicatorName, indicatorReason, indicatorValue, unitLabel } from '../../lib/domainText'
@@ -9,16 +9,38 @@ import { CLOUD_POSITIONS, HIGHLIGHT, STATUS_KEY, ZONE_META, getStatusColor, type
 /* Marco común de las dos versiones del holograma: cabecera con botones grandes,
    lienzo 3D (hijos), nubes de lecturas, selector de zonas y pie. */
 
+/** Con zoom, la imagen se corre este tanto (en píxeles) hacia el lado contrario de la tarjeta (ver SideOffset). */
+const ZOOM_SHIFT_PX = 120
+
+function percentOf(value: string | undefined, total: number): number {
+  return ((parseFloat(value ?? '') || 0) / 100) * total
+}
+
 function ConnectingLines({ selected, centered }: { selected: ZoneId; centered?: boolean }) {
   const pos = CLOUD_POSITIONS[selected]
-  // Con zoom, lo medido queda en el centro del lienzo: la línea sale de ahí.
-  const fromX = centered ? '50%' : pos.originX
-  const fromY = centered ? '50%' : pos.originY
-  const toX = pos.align === 'right' ? '76%' : '24%'
-  const toY = pos.top ?? (pos.bottom ? `calc(100% - ${pos.bottom})` : '50%')
+  const ref = useRef<SVGSVGElement>(null)
+  const [size, setSize] = useState({ w: 0, h: 0 })
+
+  // La línea se dibuja en píxeles para poder sumar el desplazamiento de la imagen.
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const update = () => setSize({ w: el.clientWidth, h: el.clientHeight })
+    update()
+    const observer = new ResizeObserver(update)
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
+  // Con zoom, lo medido queda en el centro del lienzo (corrido si hay tarjeta a un lado): la línea sale de ahí.
+  const shifted = centered && selected !== 'body' ? (pos.align === 'right' ? -ZOOM_SHIFT_PX : ZOOM_SHIFT_PX) : 0
+  const fromX = centered ? size.w / 2 + shifted : percentOf(pos.originX, size.w)
+  const fromY = centered ? size.h / 2 : percentOf(pos.originY, size.h)
+  const toX = pos.align === 'right' ? size.w * 0.76 : size.w * 0.24
+  const toY = pos.top ? percentOf(pos.top, size.h) : pos.bottom ? size.h - percentOf(pos.bottom, size.h) : size.h / 2
 
   return (
-    <svg className="pointer-events-none absolute inset-0 z-20 h-full w-full" style={{ overflow: 'visible' }} aria-hidden="true">
+    <svg ref={ref} className="pointer-events-none absolute inset-0 z-20 h-full w-full" style={{ overflow: 'visible' }} aria-hidden="true">
       <circle cx={fromX} cy={fromY} r="4" fill={HIGHLIGHT} opacity="0.95">
         <animate attributeName="r" values="3;6;3" dur="2s" repeatCount="indefinite" />
         <animate attributeName="opacity" values="0.95;0.35;0.95" dur="2s" repeatCount="indefinite" />
@@ -46,6 +68,7 @@ function StatCloud({
   visible: boolean
 }) {
   const { t } = useI18n()
+  const compact = indicators.length > 3
   return (
     <div
       className="absolute z-30 transition-all duration-300 ease-out max-md:inset-x-3 max-md:bottom-12 max-md:w-auto md:w-[220px] xl:w-[240px]"
@@ -86,28 +109,30 @@ function StatCloud({
         {indicators.length === 0 ? (
           <p className="m-0 text-xs text-mute">{t(zone.id === 'metabolism' ? 'holo.noGlucose' : 'holo.noReadings')}</p>
         ) : (
-          <div className="space-y-2">
+          // Con más de 3 lecturas (Corazón tiene 4) la tarjeta se compacta: sin mini gráfica ni razón,
+          // para que todo quepa sin desplazamiento. La razón sigue visible en Orientación.
+          <div className={compact ? 'grid grid-cols-2 gap-1.5' : 'space-y-2'}>
             {indicators.map((ind) => {
               const ui = statusUi[ind.status]
               const st = STATUS_STYLE[ind.status]
               return (
-                <div key={ind.id} className="rounded-xl border border-white/5 bg-white/[0.04] p-2.5">
-                  <div className="flex items-baseline justify-between gap-2">
+                <div key={ind.id} className={`rounded-xl border border-white/5 bg-white/[0.04] ${compact ? 'p-2' : 'p-2.5'}`}>
+                  <div className={compact ? 'flex flex-col items-start gap-1' : 'flex items-baseline justify-between gap-2'}>
                     <span className="text-xs font-medium text-cyan-200">{indicatorName(t, ind)}</span>
                     <span className="rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider" style={st}>
                       {t(STATUS_KEY[ind.status])}
                     </span>
                   </div>
                   <div className="mt-1 flex items-baseline gap-1.5">
-                    <span className="font-display text-2xl font-bold tabular-nums leading-none text-white">{indicatorValue(t, ind)}</span>
+                    <span className={`font-display font-bold tabular-nums leading-none text-white ${compact ? 'text-xl' : 'text-2xl'}`}>{indicatorValue(t, ind)}</span>
                     <span className="font-mono text-xs text-cyan-300/80">{unitLabel(t, ind.unit)}</span>
                   </div>
-                  {ind.history.length >= 2 && (
+                  {!compact && ind.history.length >= 2 && (
                     <div className="mt-1.5">
                       <Sparkline values={ind.history} color={ind.status === 'ok' ? '#00f2ff' : ui.cssVar} />
                     </div>
                   )}
-                  {(ind.reason || ind.reasonKey) && (
+                  {!compact && (ind.reason || ind.reasonKey) && (
                     <p className="m-0 mt-1 text-[10px] italic leading-tight text-mute">{indicatorReason(t, ind)}</p>
                   )}
                 </div>
@@ -126,8 +151,6 @@ export interface HoloShellProps {
   zonesStatus?: Record<ZoneId, Status | undefined>
   indicators?: Indicator[]
   className?: string
-  /** Se llama al pulsar «Reiniciar vista». */
-  onResetView: () => void
   /** Recibe si el giro automático está activo (pausado por defecto). */
   children: (autoRotate: boolean) => ReactNode
   /** Línea pequeña bajo el holograma (por ejemplo, una atribución). */
@@ -147,7 +170,6 @@ export function HoloShell({
   zonesStatus,
   indicators,
   className,
-  onResetView,
   children,
   note,
   toolbar,
@@ -170,9 +192,6 @@ export function HoloShell({
         </div>
         <div className="flex flex-wrap gap-2">
           {toolbar}
-          <button type="button" onClick={onResetView} className={BTN}>
-            {t('holo.resetView')}
-          </button>
           <button type="button" onClick={() => setAutoRotate((v) => !v)} aria-pressed={autoRotate} className={BTN}>
             <span className={`h-2 w-2 rounded-full ${autoRotate ? 'bg-cyan-400' : 'bg-slate-500'}`} />
             {autoRotate ? t('holo.pause') : t('holo.resume')}
