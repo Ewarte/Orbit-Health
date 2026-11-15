@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import type { Indicator, Status, ZoneId } from '../../types'
 import { statusUi } from '../../lib/status'
+import { indicatorName, indicatorReason, indicatorValue, unitLabel } from '../../lib/domainText'
 import { useI18n } from '../../lib/useI18n'
 import { Sparkline } from '../charts/Sparkline'
 import { CLOUD_POSITIONS, HIGHLIGHT, STATUS_KEY, ZONE_META, getStatusColor, type CloudPosition, type ZoneMeta } from './holoZonas'
@@ -8,10 +9,11 @@ import { CLOUD_POSITIONS, HIGHLIGHT, STATUS_KEY, ZONE_META, getStatusColor, type
 /* Marco común de las dos versiones del holograma: cabecera con botones grandes,
    lienzo 3D (hijos), nubes de lecturas, selector de zonas y pie. */
 
-function ConnectingLines({ selected }: { selected: ZoneId }) {
+function ConnectingLines({ selected, centered }: { selected: ZoneId; centered?: boolean }) {
   const pos = CLOUD_POSITIONS[selected]
-  const fromX = pos.originX
-  const fromY = pos.originY
+  // Con zoom, lo medido queda en el centro del lienzo: la línea sale de ahí.
+  const fromX = centered ? '50%' : pos.originX
+  const fromY = centered ? '50%' : pos.originY
   const toX = pos.align === 'right' ? '76%' : '24%'
   const toY = pos.top ?? (pos.bottom ? `calc(100% - ${pos.bottom})` : '50%')
 
@@ -58,6 +60,9 @@ function StatCloud({
         // La nube nunca sale del lienzo: si tiene muchas lecturas, se desplaza por dentro.
         maxHeight: `calc(100% - ${position.top ?? position.bottom ?? '0%'} - 8px)`,
         overflowY: 'auto',
+        // Barra de desplazamiento fina y oscura, acorde al tema (la blanca del sistema desentonaba).
+        scrollbarWidth: 'thin',
+        scrollbarColor: 'rgba(0, 242, 255, 0.35) transparent',
       }}
       aria-hidden={!visible}
     >
@@ -88,21 +93,23 @@ function StatCloud({
               return (
                 <div key={ind.id} className="rounded-xl border border-white/5 bg-white/[0.04] p-2.5">
                   <div className="flex items-baseline justify-between gap-2">
-                    <span className="text-xs font-medium text-cyan-200">{ind.name}</span>
+                    <span className="text-xs font-medium text-cyan-200">{indicatorName(t, ind)}</span>
                     <span className="rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider" style={st}>
                       {t(STATUS_KEY[ind.status])}
                     </span>
                   </div>
                   <div className="mt-1 flex items-baseline gap-1.5">
-                    <span className="font-display text-2xl font-bold tabular-nums leading-none text-white">{ind.value}</span>
-                    <span className="font-mono text-xs text-cyan-300/80">{ind.unit}</span>
+                    <span className="font-display text-2xl font-bold tabular-nums leading-none text-white">{indicatorValue(t, ind)}</span>
+                    <span className="font-mono text-xs text-cyan-300/80">{unitLabel(t, ind.unit)}</span>
                   </div>
                   {ind.history.length >= 2 && (
                     <div className="mt-1.5">
                       <Sparkline values={ind.history} color={ind.status === 'ok' ? '#00f2ff' : ui.cssVar} />
                     </div>
                   )}
-                  {ind.reason && <p className="m-0 mt-1 text-[10px] italic leading-tight text-mute">{ind.reason}</p>}
+                  {(ind.reason || ind.reasonKey) && (
+                    <p className="m-0 mt-1 text-[10px] italic leading-tight text-mute">{indicatorReason(t, ind)}</p>
+                  )}
                 </div>
               )
             })}
@@ -125,6 +132,10 @@ export interface HoloShellProps {
   children: (autoRotate: boolean) => ReactNode
   /** Línea pequeña bajo el holograma (por ejemplo, una atribución). */
   note?: string
+  /** Botones extra de la cabecera (por ejemplo, «Vista general»). */
+  toolbar?: ReactNode
+  /** Con zoom a la zona, la línea de la nube sale del centro del lienzo. */
+  focused?: boolean
 }
 
 const BTN =
@@ -139,6 +150,8 @@ export function HoloShell({
   onResetView,
   children,
   note,
+  toolbar,
+  focused,
 }: HoloShellProps) {
   const { t } = useI18n()
   const [autoRotate, setAutoRotate] = useState(false)
@@ -156,6 +169,7 @@ export function HoloShell({
           <span className="font-display font-semibold uppercase tracking-widest text-cyan-300">{t('holo.title')}</span>
         </div>
         <div className="flex flex-wrap gap-2">
+          {toolbar}
           <button type="button" onClick={onResetView} className={BTN}>
             {t('holo.resetView')}
           </button>
@@ -167,10 +181,10 @@ export function HoloShell({
       </div>
 
       {/* En tablet horizontal el lienzo se ajusta al alto de la pantalla para que «Hoy» quepa sin scroll. */}
-      <div className="relative h-[440px] w-full sm:h-[480px] lg:h-[clamp(380px,calc(100dvh-316px),600px)]" role="group" aria-label={t('holo.canvasLabel')}>
+      <div className="relative h-[440px] w-full sm:h-[480px] lg:h-[clamp(380px,calc(100dvh-324px),600px)]" role="group" aria-label={t('holo.canvasLabel')}>
         {indicators && indicators.length > 0 && (
           <div className="hidden md:block">
-            <ConnectingLines selected={selectedZone} />
+            <ConnectingLines selected={selectedZone} centered={focused} />
           </div>
         )}
         {children(autoRotate)}

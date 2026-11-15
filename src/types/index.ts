@@ -37,6 +37,9 @@ export interface Indicator {
   unit: string
   status: Status
   reason: string
+  /** Clave de texto del motivo, para mostrarlo traducido; si no existe se usa `reason`. */
+  reasonKey?: string
+  reasonParams?: Record<string, string | number>
   zone: ZoneId
   history: number[]
   /** Valores calculados a partir de este indicador (nunca cambian su estado). */

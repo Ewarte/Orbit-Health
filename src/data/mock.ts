@@ -22,10 +22,10 @@ export const indicators: Indicator[] = [
   { id: 'spo2', name: 'Blood oxygen (SpO₂)', value: '98', unit: '%', status: 'ok', reason: '', zone: 'heart', history: [97, 98, 96, 98, 99, 98, 98] },
   { id: 'resp', name: 'Respiratory rate', value: '14', unit: 'breaths/min', status: 'ok', reason: '', zone: 'heart', history: [14, 15, 13, 14, 16, 14, 14] },
   { id: 'temp', name: 'Body temperature', value: '36.7', unit: '°C', status: 'ok', reason: '', zone: 'body', history: [36.6, 36.6, 36.7, 36.5, 36.6, 36.6, 36.7] },
-  { id: 'sleep', name: 'Sleep', value: '5.8', unit: 'h', status: 'watch', reason: '3 short nights', zone: 'head', history: [7.4, 7.2, 7.4, 6.8, 5.6, 5.8, 5.8] },
-  { id: 'mood', name: 'Mood', value: '3', unit: 'of 5', status: 'watch', reason: 'below your usual', zone: 'head', history: [4, 4, 4, 3, 3, 3, 3] },
+  { id: 'sleep', name: 'Sleep', value: '5.8', unit: 'h', status: 'watch', reason: '3 short nights', reasonKey: 'reason.shortNights', reasonParams: { n: 3 }, zone: 'head', history: [7.4, 7.2, 7.4, 6.8, 5.6, 5.8, 5.8] },
+  { id: 'mood', name: 'Mood', value: '3', unit: 'of 5', status: 'watch', reason: 'below your usual', reasonKey: 'reason.belowUsual', zone: 'head', history: [4, 4, 4, 3, 3, 3, 3] },
   { id: 'vision', name: 'Vision', value: 'No change', unit: '', status: 'ok', reason: '', zone: 'head', history: [] },
-  { id: 'exercise', name: 'Bone & muscle session', value: '45', unit: 'min today', status: 'watch', reason: 'Below 80 min orbital protocol', zone: 'legs', history: [90, 80, 85, 40, 50, 45, 45] },
+  { id: 'exercise', name: 'Bone & muscle session', value: '45', unit: 'min today', status: 'watch', reason: 'Below 80 min orbital protocol', reasonKey: 'reason.belowOrbital', reasonParams: { min: 80 }, zone: 'legs', history: [90, 80, 85, 40, 50, 45, 45] },
 ]
 
 export const notices: Notice[] = [

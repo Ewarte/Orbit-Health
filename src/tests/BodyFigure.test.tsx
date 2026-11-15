@@ -25,40 +25,40 @@ describe('BodyMapPage', () => {
   it('renders all 5 interactive body zones', () => {
     render(<BodyMapPage zones={zones} indicators={indicators} />)
 
-    expect(screen.getByRole('button', { name: /Brain & behavior/i })).toBeDefined()
-    expect(screen.getByRole('button', { name: /Heart & circulation/i })).toBeDefined()
-    expect(screen.getByRole('button', { name: /Metabolism/i })).toBeDefined()
-    expect(screen.getByRole('button', { name: /Whole body/i })).toBeDefined()
-    expect(screen.getByRole('button', { name: /Bones & muscles/i })).toBeDefined()
+    expect(screen.getByRole('button', { name: /Cerebro y conducta/i })).toBeDefined()
+    expect(screen.getByRole('button', { name: /Corazón, pulmones y circulación/i })).toBeDefined()
+    expect(screen.getByRole('button', { name: /Metabolismo y digestión/i })).toBeDefined()
+    expect(screen.getByRole('button', { name: /Cuerpo entero e inmunidad/i })).toBeDefined()
+    expect(screen.getByRole('button', { name: /Huesos y músculos/i })).toBeDefined()
   })
 
   it('shows stat cloud for the initially selected zone (worst status)', () => {
     render(<BodyMapPage zones={zones} indicators={indicators} />)
 
     // Head has "watch" status so it starts selected — its indicators should be visible
-    expect(screen.getByText('Sleep')).toBeDefined()
+    expect(screen.getByText('Sueño')).toBeDefined()
     expect(screen.getByText('5.8')).toBeDefined()
-    expect(screen.getByText('Mood')).toBeDefined()
+    expect(screen.getByText('Ánimo')).toBeDefined()
   })
 
   it('switches stat cloud when clicking another zone', () => {
     render(<BodyMapPage zones={zones} indicators={indicators} />)
 
     // Click on heart zone
-    const heartZone = screen.getByRole('button', { name: /Heart & circulation/i })
+    const heartZone = screen.getByRole('button', { name: /Corazón, pulmones y circulación/i })
     fireEvent.click(heartZone)
 
     // Heart indicators should be visible
-    expect(screen.getByText('Blood pressure')).toBeDefined()
-    expect(screen.getByText('Heart rate')).toBeDefined()
+    expect(screen.getByText('Presión arterial')).toBeDefined()
+    expect(screen.getByText('Frecuencia cardíaca')).toBeDefined()
   })
 
   it('supports keyboard navigation', () => {
     render(<BodyMapPage zones={zones} indicators={indicators} />)
 
-    const metabolismZone = screen.getByRole('button', { name: /Metabolism/i })
+    const metabolismZone = screen.getByRole('button', { name: /Metabolismo y digestión/i })
     fireEvent.keyDown(metabolismZone, { key: 'Enter' })
 
-    expect(screen.getByText('Blood sugar')).toBeDefined()
+    expect(screen.getByText('Glucosa en sangre')).toBeDefined()
   })
 })

@@ -10,6 +10,8 @@ import {
   X,
 } from 'lucide-react'
 import { useState } from 'react'
+import { formatDate } from '../../lib/domainText'
+import { useI18n } from '../../lib/useI18n'
 import type { Mission } from '../../types'
 import { DailyCheckAssistant } from './DailyCheckAssistant'
 import { DailyCheckHistory } from './DailyCheckHistory'
@@ -25,6 +27,7 @@ interface Props {
 }
 
 export function DailyCheckPage({ mission, onComplete, onNavigate }: Props) {
+  const { t } = useI18n()
   const check = useDailyCheck(onComplete)
   const [assistantOpen, setAssistantOpen] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
@@ -42,20 +45,21 @@ export function DailyCheckPage({ mission, onComplete, onNavigate }: Props) {
       <div className="mx-auto max-w-[1400px]">
         {check.notification && (
           <Notification
-            message={check.notification}
+            message={t(check.notification.kind === 'all' ? 'check.notice.all' : 'check.notice.assistant', { time: check.notification.time })}
+            closeLabel={t('check.closeNotification')}
             onClose={check.dismissNotification}
           />
         )}
 
         <header className="mb-4 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
           <h1 className="font-display text-3xl font-semibold tracking-tight text-text sm:text-4xl">
-            Daily check
+            {t('check.title')}
           </h1>
           <p className="text-sm text-mute">
-            {mission?.place ?? 'Lunar transit'}, last check{' '}
-            <strong className="text-text">
-              {check.lastSavedTime || mission?.lastCheck || '07:10'}
-            </strong>
+            {t('check.lastCheck', {
+              place: mission?.place ?? t('mission.simulationPlace'),
+              time: check.lastSavedTime || mission?.lastCheck || '07:10',
+            })}
           </p>
         </header>
 
@@ -67,17 +71,17 @@ export function DailyCheckPage({ mission, onComplete, onNavigate }: Props) {
           onTrends={onNavigate ? () => onNavigate('trends') : undefined}
         />
 
-        <section aria-label="Health check metrics" className="mb-4">
+        <section aria-label={t('check.metricsLabel')} className="mb-4">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="font-display text-xl font-semibold tracking-wide text-text">
-              Check your health
+              {t('check.heading')}
             </h2>
             <button
               type="button"
               onClick={() => openAssistant()}
               className="hidden min-h-11 items-center gap-1.5 rounded-md px-3 py-2 text-xs font-medium text-mute hover:text-text sm:inline-flex"
             >
-              <RotateCcw className="h-3.5 w-3.5 text-ok" /> Modificar valores
+              <RotateCcw className="h-3.5 w-3.5 text-ok" /> {t('check.modify')}
             </button>
           </div>
 
@@ -90,7 +94,7 @@ export function DailyCheckPage({ mission, onComplete, onNavigate }: Props) {
             onClick={check.saveAll}
             className="flex min-h-12 flex-1 items-center justify-center gap-3 rounded-xl border-2 border-ok bg-notice px-6 py-4 text-base font-bold text-ok hover:brightness-110"
           >
-            <HardDriveDownload className="h-5 w-5" /> Registrar datos
+            <HardDriveDownload className="h-5 w-5" /> {t('check.record')}
           </button>
 
           <button
@@ -98,7 +102,7 @@ export function DailyCheckPage({ mission, onComplete, onNavigate }: Props) {
             onClick={() => openAssistant()}
             className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-edge bg-panel px-5 py-4 text-sm font-semibold text-text hover:border-ok"
           >
-            <CheckCircle2 className="h-5 w-5 text-ok" /> Daily check completed
+            <CheckCircle2 className="h-5 w-5 text-ok" /> {t('check.completed')}
           </button>
 
           {onNavigate && (
@@ -107,7 +111,7 @@ export function DailyCheckPage({ mission, onComplete, onNavigate }: Props) {
               onClick={() => onNavigate('trends')}
               className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-edge bg-panel px-5 py-4 text-sm font-semibold text-text hover:border-ok"
             >
-              <TrendingUp className="h-5 w-5 text-ok" /> Ver tendencias
+              <TrendingUp className="h-5 w-5 text-ok" /> {t('check.viewTrends')}
             </button>
           )}
         </section>
@@ -139,9 +143,11 @@ export function DailyCheckPage({ mission, onComplete, onNavigate }: Props) {
 
 function Notification({
   message,
+  closeLabel,
   onClose,
 }: {
   message: string
+  closeLabel: string
   onClose: () => void
 }) {
   return (
@@ -157,7 +163,7 @@ function Notification({
         type="button"
         onClick={onClose}
         className="rounded p-2 hover:bg-panel"
-        aria-label="Cerrar notificación"
+        aria-label={closeLabel}
       >
         <X className="h-4 w-4" />
       </button>
@@ -178,9 +184,11 @@ function StatusHero({
   onEdit: () => void
   onTrends?: () => void
 }) {
+  const { t, lang } = useI18n()
+  const [today] = useState(() => new Date())
   return (
     <section
-      aria-label="Daily check status"
+      aria-label={t('check.statusLabel')}
       className="relative mb-5 overflow-hidden rounded-2xl border border-edge bg-panel p-4 shadow-lg sm:p-5"
     >
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -190,19 +198,17 @@ function StatusHero({
           </span>
           <div>
             <h2 className="text-xl font-bold tracking-tight text-text sm:text-2xl">
-              {completed ? 'All good today!' : 'Check pending'}
+              {completed ? t('check.allGood') : t('check.pending')}
             </h2>
             <p className="text-sm text-mute sm:text-base">
-              {completed
-                ? 'You completed your daily check'
-                : 'Record your daily parameters'}
+              {completed ? t('check.doneBody') : t('check.pendingBody')}
             </p>
           </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
           <span className="inline-flex items-center gap-2 rounded-full border border-edge bg-rail px-4 py-2 text-sm font-medium text-text">
-            <Calendar className="h-4 w-4 text-ok" /> Nov 14, 2026
+            <Calendar className="h-4 w-4 text-ok" /> {formatDate(today, lang)}
           </span>
 
           <button
@@ -210,7 +216,7 @@ function StatusHero({
             onClick={onHistory}
             className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-edge bg-rail px-3.5 py-1.5 text-xs font-medium text-mute hover:text-text"
           >
-            <History className="h-3.5 w-3.5 text-ok" /> Historial ({recordCount})
+            <History className="h-3.5 w-3.5 text-ok" /> {t('check.history', { n: recordCount })}
           </button>
 
           {onTrends && (
@@ -219,7 +225,7 @@ function StatusHero({
               onClick={onTrends}
               className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-edge bg-rail px-3.5 py-1.5 text-xs font-medium text-mute hover:text-text"
             >
-              <TrendingUp className="h-3.5 w-3.5 text-ok" /> Tendencias
+              <TrendingUp className="h-3.5 w-3.5 text-ok" /> {t('check.trends')}
             </button>
           )}
 
@@ -228,7 +234,7 @@ function StatusHero({
             onClick={onEdit}
             className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-edge bg-panel px-3 py-1.5 text-xs font-medium text-mute hover:text-text sm:hidden"
           >
-            <SlidersHorizontal className="h-3.5 w-3.5" /> Editar
+            <SlidersHorizontal className="h-3.5 w-3.5" /> {t('check.edit')}
           </button>
         </div>
       </div>

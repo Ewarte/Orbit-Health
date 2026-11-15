@@ -1,6 +1,7 @@
 import { useState, type KeyboardEvent, type ReactNode } from 'react'
 import type { Status, ZoneId } from '../../types'
-import { statusUi } from '../../lib/status'
+import { statusLabel as statusText } from '../../lib/domainText'
+import { useI18n } from '../../lib/useI18n'
 
 interface ZoneState {
   name: string
@@ -36,6 +37,7 @@ function getZoneGradient(status?: Status, isSelected?: boolean): string {
  * - Micro-indicadores LED pulsantes para alertas médicas.
  */
 export function BodyFigure({ zones, selected, onSelect, className }: Props) {
+  const { t } = useI18n()
   const [hovered, setHovered] = useState<ZoneId | null>(null)
 
   function zone(
@@ -47,7 +49,7 @@ export function BodyFigure({ zones, selected, onSelect, className }: Props) {
     const state = zones[id]
     const isSelected = selected === id
     const fill = getZoneGradient(state?.status, isSelected)
-    const statusLabel = state?.status ? statusUi[state.status].label : 'No readings yet'
+    const statusLabel = state?.status ? statusText(t, state.status) : t('status.noReadings')
     const isHovered = hovered === id
     const isCritical = state?.status === 'act'
     const isWarning = state?.status === 'watch'
@@ -149,7 +151,7 @@ export function BodyFigure({ zones, selected, onSelect, className }: Props) {
         viewBox="0 0 200 410"
         className={className}
         role="group"
-        aria-label="Body map. Select an area to see its readings."
+        aria-label={t('body.mapLabel')}
         style={{ overflow: 'visible' }}
       >
         <defs>
@@ -365,7 +367,7 @@ export function BodyFigure({ zones, selected, onSelect, className }: Props) {
           {activeZoneState?.name ?? selected}
         </span>
         <span className="text-mute font-mono">
-          [{activeZoneState?.status?.toUpperCase() ?? 'NOMINAL'}]
+          [{(activeZoneState?.status ? statusText(t, activeZoneState.status) : t('status.nominal')).toUpperCase()}]
         </span>
       </div>
     </div>

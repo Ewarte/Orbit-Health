@@ -35,18 +35,19 @@ export const moodOptions: Mood[] = ['Bad', 'Fair', 'Neutral', 'Good', 'Great']
 
 export type StepId = 'bp' | 'hr' | 'spo2' | 'resp' | 'temp' | 'sleep' | 'mood' | 'exercise' | 'vision' | 'glucose'
 
+/** Pasos del asistente. Los textos de cada paso salen de las claves step.<id>.name y step.<id>.desc. */
 export const steps = [
-  { id: 'bp', name: 'Blood pressure', icon: Heart, description: 'Tensiómetro automático con manguito en el brazo; elige la talla del manguito.' },
-  { id: 'hr', name: 'Heart rate', icon: Activity, description: 'Oxímetro de dedo: una sola lectura da oxígeno y pulso.' },
-  { id: 'spo2', name: 'Blood oxygen', icon: Droplets, description: 'Oxímetro de dedo: una sola lectura da oxígeno y pulso.' },
-  { id: 'resp', name: 'Respiratory rate', icon: Wind, description: 'Cuenta tus respiraciones durante 60 segundos en reposo.' },
-  { id: 'temp', name: 'Body temperature', icon: Thermometer, description: 'Termómetro del botiquín.' },
-  { id: 'sleep', name: 'Sleep', icon: Moon, description: 'Reloj de actividad o tu propia estimación.' },
-  { id: 'mood', name: 'Mood', icon: Smile, description: 'Cognitive and psychological self-assessment.' },
-  { id: 'exercise', name: 'Exercise', icon: Dumbbell, description: 'Minutos de ejercicio hoy.' },
-  { id: 'vision', name: 'Vision', icon: Eye, description: '¿Notas algún cambio en tu visión hoy?' },
-  { id: 'glucose', name: 'Blood sugar (optional)', icon: Droplets, description: 'Solo si tu misión lleva glucómetro; no es parte de los chequeos de rutina de la estación.' },
-] as const satisfies readonly { id: StepId; name: string; icon: unknown; description: string }[]
+  { id: 'bp', icon: Heart },
+  { id: 'hr', icon: Activity },
+  { id: 'spo2', icon: Droplets },
+  { id: 'resp', icon: Wind },
+  { id: 'temp', icon: Thermometer },
+  { id: 'sleep', icon: Moon },
+  { id: 'mood', icon: Smile },
+  { id: 'exercise', icon: Dumbbell },
+  { id: 'vision', icon: Eye },
+  { id: 'glucose', icon: Droplets },
+] as const satisfies readonly { id: StepId; icon: unknown }[]
 
 export function formatTime(date = new Date()) {
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })

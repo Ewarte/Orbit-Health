@@ -23,8 +23,11 @@ function evaluate(value: number, range: Range): Status {
   return 'ok'
 }
 
-function metric(id: string, name: string, value: string, unit: string, status: Status, zone: ZoneId, history: number[], reason = ''): Indicator {
-  return { id, name, value, unit, status, reason, zone, history }
+/** Motivo del estado: texto en inglés de respaldo y clave para traducirlo al mostrarlo. */
+type Reason = { text: string; key: string }
+
+function metric(id: string, name: string, value: string, unit: string, status: Status, zone: ZoneId, history: number[], reason?: Reason): Indicator {
+  return { id, name, value, unit, status, reason: reason?.text ?? '', reasonKey: reason?.key, zone, history }
 }
 
 /** Presión arterial media y presión de pulso, calculadas a partir de sistólica y diastólica. */
@@ -36,7 +39,7 @@ export function evaluateDailyMetrics(values: DailyMetrics): Indicator[] {
   const bpStatus = evaluate(values.bloodPressureSys, ranges.bloodPressureSys)
   const { meanArterial, pulsePressure } = derivedBloodPressure(values.bloodPressureSys, values.bloodPressureDia)
   const moodValue = { Bad: 1, Fair: 2, Neutral: 3, Good: 4, Great: 5 }[values.mood]
-  const bp = metric('bp', 'Blood pressure', `${values.bloodPressureSys}/${values.bloodPressureDia}`, 'mmHg', bpStatus, 'heart', [values.bloodPressureSys], bpStatus === 'ok' ? '' : 'outside nominal range')
+  const bp = metric('bp', 'Blood pressure', `${values.bloodPressureSys}/${values.bloodPressureDia}`, 'mmHg', bpStatus, 'heart', [values.bloodPressureSys], bpStatus === 'ok' ? undefined : { text: 'outside nominal range', key: 'reason.outsideRange' })
   bp.derived = [
     { id: 'map', label: 'Mean arterial pressure', value: String(meanArterial), unit: 'mmHg' },
     { id: 'pp', label: 'Pulse pressure', value: String(pulsePressure), unit: 'mmHg' },
@@ -47,10 +50,10 @@ export function evaluateDailyMetrics(values: DailyMetrics): Indicator[] {
     metric('spo2', 'Blood oxygen (SpO₂)', String(values.spo2), '%', evaluate(values.spo2, ranges.spo2), 'heart', [values.spo2]),
     metric('resp', 'Respiratory rate', String(values.respiratoryRate), 'breaths/min', evaluate(values.respiratoryRate, ranges.respiratoryRate), 'heart', [values.respiratoryRate]),
     metric('temp', 'Body temperature', values.bodyTemperature.toFixed(1), '°C', evaluate(values.bodyTemperature, ranges.bodyTemperature), 'body', [values.bodyTemperature]),
-    metric('sleep', 'Sleep', String(values.sleepHours), 'hours', evaluate(values.sleepHours, ranges.sleepHours), 'head', [values.sleepHours], values.sleepHours < ranges.sleepHours.min ? 'below nominal range' : ''),
+    metric('sleep', 'Sleep', String(values.sleepHours), 'hours', evaluate(values.sleepHours, ranges.sleepHours), 'head', [values.sleepHours], values.sleepHours < ranges.sleepHours.min ? { text: 'below nominal range', key: 'reason.belowRange' } : undefined),
     metric('mood', 'Mood', values.mood, 'of 5', evaluate(moodValue, ranges.mood), 'head', [moodValue]),
-    metric('vision', 'Vision', values.visionChange ? 'Change reported' : 'No change', '', values.visionChange ? 'watch' : 'ok', 'head', [], values.visionChange ? 'change reported' : ''),
-    metric('exercise', 'Exercise', String(values.exerciseMinutes), 'min today', evaluate(values.exerciseMinutes, ranges.exerciseMinutes), 'legs', [values.exerciseMinutes], values.exerciseMinutes < ranges.exerciseMinutes.min ? 'below the ~90 min/day station reference' : ''),
+    metric('vision', 'Vision', values.visionChange ? 'Change reported' : 'No change', '', values.visionChange ? 'watch' : 'ok', 'head', [], values.visionChange ? { text: 'change reported', key: 'reason.visionChange' } : undefined),
+    metric('exercise', 'Exercise', String(values.exerciseMinutes), 'min today', evaluate(values.exerciseMinutes, ranges.exerciseMinutes), 'legs', [values.exerciseMinutes], values.exerciseMinutes < ranges.exerciseMinutes.min ? { text: 'below the ~90 min/day station reference', key: 'reason.exerciseBelowStation' } : undefined),
   ]
   // La glucosa no es rutinaria: solo se evalúa si se midió.
   if (values.bloodSugar !== null) {

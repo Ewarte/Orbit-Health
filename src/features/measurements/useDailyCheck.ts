@@ -19,7 +19,8 @@ export function useDailyCheck(onComplete?: (metrics: DailyMetrics) => void) {
     return raw.map((record: SavedRecord) => ({ ...record, metrics: normalizeMetrics(record?.metrics) }))
   })
   const [lastSavedTime, setLastSavedTime] = useState('07:10')
-  const [notification, setNotification] = useState<string | null>(null)
+  /** Aviso tras guardar: se guarda el tipo y la hora, y la pantalla lo traduce al mostrarlo. */
+  const [notification, setNotification] = useState<{ kind: 'all' | 'assistant'; time: string } | null>(null)
 
   useEffect(() => {
     try {
@@ -36,12 +37,12 @@ export function useDailyCheck(onComplete?: (metrics: DailyMetrics) => void) {
     return () => window.clearTimeout(timer)
   }, [notification])
 
-  function save(metricsToSave: DailyMetrics, message: string) {
+  function save(metricsToSave: DailyMetrics, kind: 'all' | 'assistant') {
     const record = createRecord(metricsToSave)
     setMetrics(metricsToSave)
     setSavedRecords((records) => [record, ...records])
     setLastSavedTime(record.timeStr)
-    setNotification(`${message} (${record.timeStr}).`)
+    setNotification({ kind, time: record.timeStr })
     onComplete?.(metricsToSave)
   }
 
@@ -51,7 +52,7 @@ export function useDailyCheck(onComplete?: (metrics: DailyMetrics) => void) {
     lastSavedTime,
     notification,
     dismissNotification: () => setNotification(null),
-    saveAll: () => save(metrics, 'Datos registrados correctamente en la telemetría local'),
-    saveAssistant: (nextMetrics: DailyMetrics) => save(nextMetrics, 'Chequeo completado y registrado'),
+    saveAll: () => save(metrics, 'all'),
+    saveAssistant: (nextMetrics: DailyMetrics) => save(nextMetrics, 'assistant'),
   }
 }

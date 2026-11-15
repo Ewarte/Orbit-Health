@@ -1,6 +1,8 @@
 import { useState, type KeyboardEvent } from 'react'
 import type { Indicator, Status, Zone, ZoneId } from '../../types'
 import { statusUi, worstStatus } from '../../lib/status'
+import { indicatorName, indicatorReason, indicatorValue, statusLabel, unitLabel, zoneName } from '../../lib/domainText'
+import { useI18n } from '../../lib/useI18n'
 import { Sparkline } from '../charts/Sparkline'
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -55,6 +57,7 @@ function StatCloud({
   position: CloudPosition
   visible: boolean
 }) {
+  const { t } = useI18n()
   const worstSt = worstStatus(indicators.map((i) => i.status))
   const color = statusColor(worstSt)
 
@@ -95,7 +98,7 @@ function StatCloud({
               style={{ backgroundColor: color, boxShadow: `0 0 8px ${color}` }}
             />
             <span className="font-display text-[13px] font-semibold uppercase tracking-wider text-text">
-              {zone.name}
+              {zoneName(t, zone)}
             </span>
           </div>
           <span className="font-mono text-[9px] uppercase tracking-widest text-mute">HUD-0{indicators.length}</span>
@@ -103,7 +106,7 @@ function StatCloud({
 
         {/* Indicators */}
         {indicators.length === 0 ? (
-          <p className="m-0 text-xs text-mute">No readings telemetry yet.</p>
+          <p className="m-0 text-xs text-mute">{t('body.noReadings')}</p>
         ) : (
           <div className="space-y-2">
             {indicators.map((ind) => {
@@ -111,7 +114,7 @@ function StatCloud({
               return (
                 <div key={ind.id} className="rounded-xl bg-white/[0.03] p-2.5 transition-colors hover:bg-white/[0.05]">
                   <div className="flex items-baseline justify-between gap-2">
-                    <span className="text-xs font-medium text-mute">{ind.name}</span>
+                    <span className="text-xs font-medium text-mute">{indicatorName(t, ind)}</span>
                     <span
                       className="rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider"
                       style={{
@@ -120,14 +123,14 @@ function StatCloud({
                         border: `1px solid ${ind.status === 'ok' ? 'rgba(0,242,255,0.3)' : ind.status === 'watch' ? 'rgba(251,146,60,0.3)' : 'rgba(248,113,113,0.3)'}`,
                       }}
                     >
-                      {ui.label}
+                      {statusLabel(t, ind.status)}
                     </span>
                   </div>
                   <div className="mt-1 flex items-baseline gap-1.5">
                     <span className="font-display text-xl font-semibold tabular-nums leading-none text-text">
-                      {ind.value}
+                      {indicatorValue(t, ind)}
                     </span>
-                    <span className="text-xs text-mute">{ind.unit}</span>
+                    <span className="text-xs text-mute">{unitLabel(t, ind.unit)}</span>
                   </div>
                   {ind.history.length >= 2 && (
                     <div className="mt-1.5">
@@ -136,7 +139,7 @@ function StatCloud({
                   )}
                   {ind.reason && (
                     <p className="m-0 mt-1 text-[10px] leading-tight text-mute/80 italic">
-                      {ind.reason}
+                      {indicatorReason(t, ind)}
                     </p>
                   )}
                 </div>
@@ -183,6 +186,7 @@ function ConnectingLines({ selected }: { selected: ZoneId }) {
    ═══════════════════════════════════════════════════════════════════════ */
 
 export function BodyMapPage({ zones, indicators, className }: Props) {
+  const { t } = useI18n()
   const zoneStatus = (id: ZoneId): Status | undefined =>
     worstStatus(indicators.filter((i) => i.zone === id).map((i) => i.status))
 
@@ -194,11 +198,17 @@ export function BodyMapPage({ zones, indicators, className }: Props) {
   const [hovered, setHovered] = useState<ZoneId | null>(null)
 
   const figureZones = Object.fromEntries(
-    zones.map((z) => [z.id, { name: z.name, status: zoneStatus(z.id) }]),
+    zones.map((z) => [z.id, { name: zoneName(t, z), status: zoneStatus(z.id) }]),
   ) as Record<ZoneId, { name: string; status?: Status }>
 
   const activeZone = figureZones[selected]
   const activeColor = statusColor(activeZone?.status)
+
+  /** Texto accesible de cada zona: su nombre y su estado en el idioma activo. */
+  function zoneLabel(id: ZoneId) {
+    const zone = figureZones[id]
+    return `${zone?.name ?? id}: ${zone?.status ? statusLabel(t, zone.status) : t('status.nominal')}`
+  }
 
   function handleZoneSelect(id: ZoneId) {
     setSelected(id)
@@ -236,7 +246,7 @@ export function BodyMapPage({ zones, indicators, className }: Props) {
             viewBox="0 0 260 480"
             className="h-full w-auto max-w-[240px] sm:max-w-[260px] lg:max-w-[290px] drop-shadow-[0_0_20px_rgba(0,242,255,0.2)]"
             role="group"
-            aria-label="Interactive Holographic Body Map"
+            aria-label={t('body.holoMapLabel')}
             style={{ overflow: 'visible' }}
           >
             <defs>
@@ -538,7 +548,7 @@ export function BodyMapPage({ zones, indicators, className }: Props) {
             <g
               role="button"
               tabIndex={0}
-              aria-label={`${figureZones.head?.name ?? 'Brain & behavior'}: ${figureZones.head?.status ?? 'nominal'}`}
+              aria-label={zoneLabel('head')}
               aria-pressed={selected === 'head'}
               onClick={() => handleZoneSelect('head')}
               onKeyDown={(e) => handleKeyDown('head', e)}
@@ -564,7 +574,7 @@ export function BodyMapPage({ zones, indicators, className }: Props) {
             <g
               role="button"
               tabIndex={0}
-              aria-label={`Heart & circulation: ${figureZones.heart?.status ?? 'nominal'}`}
+              aria-label={zoneLabel('heart')}
               aria-pressed={selected === 'heart'}
               onClick={() => handleZoneSelect('heart')}
               onKeyDown={(e) => handleKeyDown('heart', e)}
@@ -587,7 +597,7 @@ export function BodyMapPage({ zones, indicators, className }: Props) {
             <g
               role="button"
               tabIndex={0}
-              aria-label={`Metabolism: ${figureZones.metabolism?.status ?? 'nominal'}`}
+              aria-label={zoneLabel('metabolism')}
               aria-pressed={selected === 'metabolism'}
               onClick={() => handleZoneSelect('metabolism')}
               onKeyDown={(e) => handleKeyDown('metabolism', e)}
@@ -610,7 +620,7 @@ export function BodyMapPage({ zones, indicators, className }: Props) {
             <g
               role="button"
               tabIndex={0}
-              aria-label={`Whole body: ${figureZones.body?.status ?? 'nominal'}`}
+              aria-label={zoneLabel('body')}
               aria-pressed={selected === 'body'}
               onClick={() => handleZoneSelect('body')}
               onKeyDown={(e) => handleKeyDown('body', e)}
@@ -640,7 +650,7 @@ export function BodyMapPage({ zones, indicators, className }: Props) {
             <g
               role="button"
               tabIndex={0}
-              aria-label={`Bones & muscles: ${figureZones.legs?.status ?? 'nominal'}`}
+              aria-label={zoneLabel('legs')}
               aria-pressed={selected === 'legs'}
               onClick={() => handleZoneSelect('legs')}
               onKeyDown={(e) => handleKeyDown('legs', e)}
@@ -696,10 +706,10 @@ export function BodyMapPage({ zones, indicators, className }: Props) {
         </span>
         <span className="h-3 w-px bg-white/10" />
         <span className="font-mono text-[10px] uppercase tracking-widest text-mute">
-          [{activeZone?.status?.toUpperCase() ?? 'NOMINAL'}]
+          [{(activeZone?.status ? statusLabel(t, activeZone.status) : t('status.nominal')).toUpperCase()}]
         </span>
         <span className="font-mono text-[10px] text-mute/80">
-          {indicators.filter((i) => i.zone === selected).length} telemetry items
+          {t('body.telemetryItems', { n: indicators.filter((i) => i.zone === selected).length })}
         </span>
       </div>
     </div>
