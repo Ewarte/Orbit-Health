@@ -32,6 +32,13 @@ Importante:
 - La versión portátil no se instala ni se actualiza sola: para actualizarla, reemplaza el archivo por el nuevo.
 - Pesa unos 4 MB porque lleva dentro todo (letras y modelo 3D).
 
+## Sensores Bluetooth
+
+En el chequeo diario, el botón «Leer del sensor» (pulso, oxígeno y respiración) ofrece dos fuentes:
+
+- **Sensor simulado:** funciona en todos los navegadores y dispositivos, incluido iPad. Sirve para la demostración y queda marcado como «Simulado».
+- **Sensor Bluetooth real:** funciona en **Edge o Chrome en Windows**, con la app abierta desde **https** (la dirección publicada) o desde **localhost**. En el archivo portátil abierto con doble clic (`file://`) el navegador puede bloquearlo. **En iPad (Safari) no funciona**: la app lo avisa y se puede usar el simulador o escribir el valor. Sirve con monitores de ritmo cardíaco y oxímetros que usen los servicios estándar de Bluetooth.
+
 ## 3. Para el equipo técnico
 
 ```bash

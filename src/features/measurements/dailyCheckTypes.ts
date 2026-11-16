@@ -17,6 +17,12 @@ export interface DailyMetrics {
   mood: Mood
 }
 
+/** De dónde salió un dato: escrito a mano, de un sensor simulado o de un sensor Bluetooth real. */
+export type DataSource = 'manual' | 'simulated' | 'bluetooth'
+
+/** Origen de cada medida. Una medida sin entrada se considera 'manual' (registros antiguos). */
+export type MetricSources = Partial<Record<keyof DailyMetrics, DataSource>>
+
 export interface SavedRecord {
   id: string
   timestamp: string
@@ -24,4 +30,6 @@ export interface SavedRecord {
   dateStr: string
   metrics: DailyMetrics
   notes?: string
+  /** Origen de cada medida; si falta, todas son manuales. */
+  sources?: MetricSources
 }

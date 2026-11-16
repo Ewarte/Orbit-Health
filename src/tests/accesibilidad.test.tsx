@@ -5,7 +5,7 @@ import { HoloShell } from '../components/health/HoloShell'
 import { DailyCheckAssistant } from '../features/measurements/DailyCheckAssistant'
 import { DailyCheckHistory } from '../features/measurements/DailyCheckHistory'
 import { defaultMetrics } from '../features/measurements/dailyCheckData'
-import type { DailyMetrics } from '../features/measurements/dailyCheckTypes'
+import type { DailyMetrics, MetricSources } from '../features/measurements/dailyCheckTypes'
 import { TrendsPage } from '../features/trends/TrendsPage'
 import { I18nProvider } from '../lib/I18nProvider'
 
@@ -25,10 +25,11 @@ function Prueba({ pasoInicial = 0 }: { pasoInicial?: number }) {
   const [abierto, setAbierto] = useState(false)
   const [paso, setPaso] = useState(pasoInicial)
   const [metricas, setMetricas] = useState<DailyMetrics>(defaultMetrics)
+  const [origenes, setOrigenes] = useState<MetricSources>({})
   return (
     <>
       <button type="button" onClick={() => setAbierto(true)}>Abrir asistente</button>
-      {abierto && <DailyCheckAssistant metrics={metricas} step={paso} onChange={setMetricas} onStep={setPaso} onSave={() => setAbierto(false)} onClose={() => setAbierto(false)} />}
+      {abierto && <DailyCheckAssistant metrics={metricas} sources={origenes} onSourcesChange={setOrigenes} step={paso} onChange={setMetricas} onStep={setPaso} onSave={() => setAbierto(false)} onClose={() => setAbierto(false)} />}
     </>
   )
 }

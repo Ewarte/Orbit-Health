@@ -17,7 +17,7 @@ import { DailyCheckAssistant } from './DailyCheckAssistant'
 import { DailyCheckHistory } from './DailyCheckHistory'
 import { DailyMetricCards } from './DailyMetricCards'
 import { formatUtcHHMM, steps, type StepId } from './dailyCheckData'
-import type { DailyMetrics, SavedRecord } from './dailyCheckTypes'
+import type { DailyMetrics, MetricSources, SavedRecord } from './dailyCheckTypes'
 import { useDailyCheck } from './useDailyCheck'
 
 interface Props {
@@ -35,11 +35,14 @@ export function DailyCheckPage({ mission, onComplete, onNavigate, startWithAssis
   const [historyOpen, setHistoryOpen] = useState(false)
   const [step, setStep] = useState(0)
   const [draft, setDraft] = useState(check.metrics)
+  const [draftSources, setDraftSources] = useState<MetricSources>({})
 
   const lastCheckAt = check.lastCheckAt
 
   function openAssistant(stepId?: StepId) {
     setDraft({ ...check.metrics })
+    // Los valores de partida son los del último chequeo: conservan su origen hasta que se ajusten a mano.
+    setDraftSources({ ...(check.savedRecords[0]?.sources ?? {}) })
     setStep(Math.max(0, steps.findIndex((item) => item.id === stepId)))
     setAssistantOpen(true)
   }
@@ -133,12 +136,14 @@ export function DailyCheckPage({ mission, onComplete, onNavigate, startWithAssis
       {assistantOpen && (
         <DailyCheckAssistant
           metrics={draft}
+          sources={draftSources}
+          onSourcesChange={setDraftSources}
           step={step}
           onChange={setDraft}
           onStep={setStep}
           onClose={() => setAssistantOpen(false)}
           onSave={() => {
-            check.saveAssistant(draft)
+            check.saveAssistant(draft, draftSources)
             setAssistantOpen(false)
           }}
         />

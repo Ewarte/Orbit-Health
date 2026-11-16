@@ -11,6 +11,7 @@ import { CURRENT_METRICS_KEY, STORAGE_KEY, normalizeMetrics, parseRecords } from
 import type { DailyMetrics, SavedRecord } from './features/measurements/dailyCheckTypes'
 import { liveIndicators } from './features/evaluation/liveIndicators'
 import { GuidancePage } from './features/guidance/GuidancePage'
+import { MedicalPage } from './features/medical/MedicalPage'
 import { MissionPage } from './features/mission/MissionPage'
 import { UpdateNotice } from './components/layout/UpdateNotice'
 import { ReminderBanner } from './features/mission/ReminderBanner'
@@ -19,7 +20,7 @@ import { useRoutineReminders } from './features/mission/useRoutineReminders'
 import { TrendsPage } from './features/trends/TrendsPage'
 import type { Mission } from './types'
 
-const navIds = ['today', 'check', 'trends', 'guidance', 'routine', 'mission'] as const
+const navIds = ['today', 'check', 'trends', 'medical', 'guidance', 'routine', 'mission'] as const
 
 const MISSION_KEY = 'orbit_health_mission_config'
 
@@ -103,6 +104,8 @@ export default function App() {
           <DailyCheckPage mission={missionView} onNavigate={navigate} onComplete={handleComplete} startWithAssistant={startAssistant} />
         ) : current === 'trends' ? (
           <TrendsPage mission={missionView} onNavigate={navigate} />
+        ) : current === 'medical' ? (
+          <MedicalPage mission={missionView} records={records} onNavigate={navigate} />
         ) : current === 'guidance' ? (
           <GuidancePage indicators={indicators} />
         ) : current === 'routine' ? (

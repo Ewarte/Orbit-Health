@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { createRecord, CURRENT_METRICS_KEY, defaultMetrics, formatUtcHHMM, MAX_RECORDS, normalizeMetrics, parseRecords, STORAGE_KEY } from './dailyCheckData'
-import type { DailyMetrics, SavedRecord } from './dailyCheckTypes'
+import type { DailyMetrics, MetricSources, SavedRecord } from './dailyCheckTypes'
 
 function readStorage<T>(key: string, fallback: T): T {
   try {
@@ -38,8 +38,8 @@ export function useDailyCheck(onComplete?: (metrics: DailyMetrics, record: Saved
     return () => window.clearTimeout(timer)
   }, [notification])
 
-  function save(metricsToSave: DailyMetrics, kind: 'all' | 'assistant') {
-    const record = createRecord(metricsToSave)
+  function save(metricsToSave: DailyMetrics, kind: 'all' | 'assistant', sources?: MetricSources) {
+    const record = createRecord(metricsToSave, new Date(), sources)
     const next = [record, ...savedRecords].slice(0, MAX_RECORDS)
     setMeasured(metricsToSave)
     setSavedRecords(next)
@@ -63,11 +63,11 @@ export function useDailyCheck(onComplete?: (metrics: DailyMetrics, record: Saved
     lastCheckAt: savedRecords[0]?.timestamp ?? null,
     notification,
     dismissNotification: () => setNotification(null),
-    saveAssistant: (nextMetrics: DailyMetrics) => save(nextMetrics, 'assistant'),
+    saveAssistant: (nextMetrics: DailyMetrics, sources?: MetricSources) => save(nextMetrics, 'assistant', sources),
     /** Guarda las medidas actuales; sin chequeo previo no guarda nada y devuelve false (la pantalla abre el asistente). */
     saveAll: (): boolean => {
       if (!measured) return false
-      save(measured, 'all')
+      save(measured, 'all', savedRecords[0]?.sources)
       return true
     },
   }

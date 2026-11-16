@@ -100,10 +100,21 @@ Registro de las decisiones tomadas del 14 al 15 de noviembre de 2026, con el mot
 - **Decisión (2026-11-15):** la app abre en «Hoy». Un usuario sin chequeos no ve alertas ni valores inventados: «Hoy» invita a hacer el primer chequeo. Tendencias usa todos los chequeos reales y completa los días vacíos con una simulación **marcada como datos de demostración** (punto relleno = real, vacío = simulado).
 - **Por qué:** presentar valores de ejemplo como medidas reales es engañoso en una app de salud; la simulación se mantiene solo para mostrar cómo se ven las tendencias, siempre rotulada.
 
+### 14. Vista médica y exportación
+- **Decisión (2026-11-16):** pantalla propia «Vista médica» en el menú, visible para todos. Muestra misión, entorno, día de vuelo, MET y número de registros; un resumen por indicador (último valor, promedio y mínimo/máximo de 7 días, lecturas seguidas fuera de rango con la regla de tendencia, estado y el rango del motor marcado como borrador, más presión media y de pulso); y la tabla de todos los registros con fecha y hora UTC, día de vuelo, estado (color, ícono y texto) y origen de cada dato. Filtro de 7 días, 30 días o todo.
+- **Exportar:** CSV y JSON, generados en el navegador (sin internet) con el rango elegido. CSV: encabezados con unidades en el idioma activo, fechas UTC ISO 8601, separador coma, escapado de comillas, BOM UTF-8 para Excel. JSON: metadatos (app, versión, misión, fecha de exportación), aviso de que los umbrales son un borrador, los umbrales usados y cada registro con los orígenes. Nombre: `orbit-health_<entorno>_<AAAA-MM-DD>`.
+- **Por qué:** NASA critica que todos los equipos exigen registrar los datos a mano y transferir archivos, lo que consume tiempo de la tripulación ([INVESTIGACION-NASA.md §1.3](INVESTIGACION-NASA.md)); un archivo listo para el médico evita copiar cifras. Una pantalla aparte mantiene sencilla la vista de la tripulación.
+- **Límites:** en Excel con configuración regional en español el separador de lista suele ser punto y coma; si no separa las columnas, usar «Datos > Desde texto» eligiendo la coma. Los umbrales siguen siendo borrador (punto 3).
+
+### 15. Sensores: origen de cada dato, simulador y Bluetooth
+- **Decisión (2026-11-16):** cada medida guardada lleva su origen (`manual`, `simulated` o `bluetooth`; sin dato = manual, así los registros viejos siguen funcionando). Una capa común `SensorSource` tiene dos implementaciones: un sensor simulado (siempre disponible, con opción de valores fuera de rango para la demostración) y Bluetooth real con Web Bluetooth. En los pasos de pulso, oxígeno y respiración, «Leer del sensor» completa el valor y su origen; si se ajusta a mano, pasa a manual.
+- **Bluetooth:** servicio estándar Heart Rate (0x180D, característica 0x2A37, pulso de 8 o 16 bits) y Pulse Oximeter (0x1822, medición puntual 0x2A5E o continua 0x2A5F, valores SFLOAT: oxígeno y pulso). La respiración no tiene servicio estándar, por eso solo la entrega el simulador. Solo Chromium/Edge en https o localhost; en Safari/iPad no existe y la interfaz lo explica.
+- **Por qué:** NASA pide «sensores pequeños, fáciles y preferiblemente inalámbricos» que midan, guarden y transmitan, y hoy exige registrar a mano ([INVESTIGACION-NASA.md §1.3](INVESTIGACION-NASA.md)); en la estación ya se usa un monitor de ritmo cardíaco Bluetooth con tablet ([§1.4](INVESTIGACION-NASA.md)). Marcar el origen deja que el médico sepa qué dato es medido, simulado o escrito.
+- **Evidencia y límite:** el análisis de bytes está probado con ejemplos de la especificación del Bluetooth SIG; **no se probó con un dispositivo real** (pendiente). Los valores simulados nunca deben presentarse como medidas reales: llevan su etiqueta.
+
 ## Pendientes conocidos
 1. Revisión médica de umbrales y guías (punto 3).
-2. Vista técnica para el médico (punto 4).
-3. Publicar en Vercel la versión con la PWA y probar la instalación en una tablet real (punto 6).
-4. Integración con sensores (la propia NASA pide sensores pequeños e inalámbricos, [INVESTIGACION-NASA.md §1.3](INVESTIGACION-NASA.md)).
-5. Abrir la pestaña *Resources* del reto en un navegador: desde la PC de desarrollo no se pudo (error de certificado).
-6. Probar en una tablet real.
+2. Publicar en Vercel la versión con la PWA y probar la instalación en una tablet real (punto 6).
+3. Probar el Bluetooth con un oxímetro y un monitor de ritmo cardíaco reales (punto 15).
+4. Abrir la pestaña *Resources* del reto en un navegador: desde la PC de desarrollo no se pudo (error de certificado).
+5. Probar en una tablet real.

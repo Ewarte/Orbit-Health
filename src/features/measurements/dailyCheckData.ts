@@ -1,5 +1,5 @@
 import { Activity, Dumbbell, Droplets, Eye, Heart, Moon, Smile, Thermometer, Wind } from 'lucide-react'
-import type { DailyMetrics, Mood, SavedRecord } from './dailyCheckTypes'
+import type { DailyMetrics, DataSource, MetricSources, Mood, SavedRecord } from './dailyCheckTypes'
 
 export const STORAGE_KEY = 'orbit_health_daily_records'
 export const CURRENT_METRICS_KEY = 'orbit_health_current_metrics'
@@ -70,6 +70,34 @@ export function normalizeMetrics(raw: unknown): DailyMetrics {
   }
 }
 
+/** Todas las medidas de un chequeo (en el orden en que se muestran y exportan). */
+export const METRIC_FIELDS = [
+  'bloodPressureSys', 'bloodPressureDia', 'heartRate', 'spo2', 'respiratoryRate', 'bodyTemperature',
+  'sleepHours', 'exerciseMinutes', 'bloodSugar', 'mood', 'visionChange',
+] as const satisfies readonly (keyof DailyMetrics)[]
+
+export const DATA_SOURCES: readonly DataSource[] = ['manual', 'simulated', 'bluetooth']
+
+/**
+ * Lee el mapa de orígenes guardado: conserva solo campos conocidos con un origen válido y descarta
+ * lo demás (sin lanzar excepciones). 'manual' es el valor por defecto, así que no se guarda.
+ */
+export function normalizeSources(raw: unknown): MetricSources | undefined {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined
+  const source = raw as Record<string, unknown>
+  const result: MetricSources = {}
+  for (const field of METRIC_FIELDS) {
+    const value = source[field]
+    if (value === 'simulated' || value === 'bluetooth') result[field] = value
+  }
+  return Object.keys(result).length > 0 ? result : undefined
+}
+
+/** Origen de una medida en un registro: 'manual' si no consta. */
+export function sourceOf(record: Pick<SavedRecord, 'sources'>, field: keyof DailyMetrics): DataSource {
+  return record.sources?.[field] ?? 'manual'
+}
+
 /**
  * Lee el historial guardado: descarta lo que no sea un registro válido (sin objeto de medidas o
  * sin fecha legible), normaliza las medidas, ordena del más reciente al más antiguo y conserva
@@ -91,6 +119,7 @@ export function parseRecords(raw: unknown): SavedRecord[] {
       timeStr: typeof data.timeStr === 'string' ? data.timeStr : '',
       metrics: normalizeMetrics(metrics),
       ...(typeof data.notes === 'string' ? { notes: data.notes } : {}),
+      ...(normalizeSources(data.sources) ? { sources: normalizeSources(data.sources) } : {}),
     })
   })
   records.sort((a, b) => Date.parse(b.timestamp) - Date.parse(a.timestamp))
@@ -127,12 +156,14 @@ export function formatTime(date = new Date()) {
   return date.toISOString().slice(11, 16)
 }
 
-export function createRecord(metrics: DailyMetrics, date = new Date()) {
+export function createRecord(metrics: DailyMetrics, date = new Date(), sources?: MetricSources): SavedRecord {
+  const cleanSources = normalizeSources(sources)
   return {
     id: `rec-${Date.now()}`,
     timestamp: date.toISOString(),
     dateStr: date.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }),
     timeStr: formatTime(date),
     metrics: { ...metrics },
+    ...(cleanSources ? { sources: cleanSources } : {}),
   }
 }

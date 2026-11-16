@@ -39,8 +39,9 @@ Todo lo que se decidió y por qué, con su evidencia, está en [docs/DECISIONES.
 | Pantalla | Qué hace |
 |---|---|
 | Hoy | Holograma del cuerpo: vista general y zoom a los órganos de cada zona, con sus lecturas. Al lado, lo que pide atención. |
-| Chequeo diario | Registro guiado de los indicadores. |
+| Chequeo diario | Registro guiado de los indicadores; en pulso, oxígeno y respiración se puede leer de un sensor (simulado o Bluetooth) con el botón «Leer del sensor». |
 | Tendencias | Evolución de cada indicador en los últimos días. |
+| Vista médica | Para el médico de vuelo: resumen por indicador (último valor, promedio y mín/máx de 7 días, lecturas seguidas fuera de rango), tabla de todos los registros con el origen de cada dato y exportación a CSV y JSON. |
 | Orientación | Una tarjeta por cada indicador en «vigilar» o «actuar»: qué significa, qué hacer, cómo prevenir y a quién avisar. |
 | Rutina | Tareas del día con recordatorios, según el reloj de la misión. |
 | Misión | Entorno (cápsula, estación, tránsito, Luna, Marte), despegue en UTC y reloj de la misión (UTC, MET, sol marciano). |
@@ -86,7 +87,9 @@ Orbit-Health/
         ├── evaluation/     Motor que decide si un valor es normal, a vigilar o crítico
         ├── guidance/       Orientación con alertas en vivo
         ├── measurements/   Chequeo diario
+        ├── medical/        Vista médica: resumen, tabla de registros y exportación CSV/JSON
         ├── mission/        Misión y rutina con recordatorios
+        ├── sensors/        Origen de los datos: sensor simulado y Bluetooth (Web Bluetooth)
         └── trends/         Tendencias
 ```
 

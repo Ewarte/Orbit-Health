@@ -23,7 +23,8 @@ export const healthRanges = {
 
 const ranges = healthRanges
 
-function evaluate(value: number, range: Range): Status {
+/** Estado de un valor frente a un rango (se exporta para la Vista médica). */
+export function evaluate(value: number, range: Range): Status {
   if (value < range.warningMin || value > range.warningMax) return 'act'
   if (value < range.min || value > range.max) return 'watch'
   return 'ok'

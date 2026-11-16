@@ -1,4 +1,4 @@
-import { Activity, BookOpen, CalendarCheck, ClipboardCheck, Home, Languages, Rocket, type LucideIcon } from 'lucide-react'
+import { Activity, BookOpen, CalendarCheck, ClipboardCheck, Home, Languages, Rocket, Stethoscope, type LucideIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useI18n } from '../../lib/useI18n'
 
@@ -20,6 +20,7 @@ const navIcons: Record<string, LucideIcon> = {
   today: Home,
   check: ClipboardCheck,
   trends: Activity,
+  medical: Stethoscope,
   guidance: BookOpen,
   routine: CalendarCheck,
   mission: Rocket,
