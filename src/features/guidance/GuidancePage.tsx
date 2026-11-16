@@ -1,6 +1,7 @@
 import { AlertTriangle, CheckCircle2, ExternalLink, Phone, ShieldAlert, ShieldCheck } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { guidanceEntries } from '../../data/guidance'
+import { indicatorReason, indicatorValue, unitLabel } from '../../lib/domainText'
 import { useI18n } from '../../lib/useI18n'
 import type { Indicator } from '../../types'
 import { activeAlerts, type Alert } from './guidanceLogic'
@@ -28,7 +29,7 @@ export function GuidancePage({ indicators }: Props) {
           )}
         </header>
 
-        {alerts.length === 0 ? <AllClear /> : (
+        {indicators.length === 0 ? <NoChecks /> : alerts.length === 0 ? <AllClear /> : (
           <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
             {alerts.map((alert) => <AlertCard key={alert.indicator.id} alert={alert} />)}
           </div>
@@ -45,7 +46,9 @@ function AlertCard({ alert }: { alert: Alert }) {
   const { indicator, entry } = alert
   const critical = indicator.status === 'act'
   const name = entry?.name[lang] ?? indicator.name
-  const value = `${indicator.value}${indicator.unit ? ` ${indicator.unit}` : ''}`
+  const unit = unitLabel(t, indicator.unit)
+  const value = `${indicatorValue(t, indicator)}${unit ? ` ${unit}` : ''}`
+  const reason = indicatorReason(t, indicator)
   const titleId = `guidance-${indicator.id}`
 
   return (
@@ -63,6 +66,7 @@ function AlertCard({ alert }: { alert: Alert }) {
             </span>
           </div>
           <p className="mb-0 mt-1 text-sm text-mute">{t('guidance.current')}: <strong className="text-text">{value}</strong></p>
+          {reason && <p className="mb-0 mt-1 text-sm text-mute">{t('guidance.reason')}: <span className="text-text">{reason}</span></p>}
 
           <p className="mb-0 mt-3 text-mute"><strong className="text-text">{t('guidance.meaning')}. </strong>{entry?.meaning[lang] ?? t('guidance.generic.meaning')}</p>
 
@@ -90,6 +94,17 @@ function AlertCard({ alert }: { alert: Alert }) {
         </div>
       </div>
     </article>
+  )
+}
+
+/** Sin ningún chequeo: no hay alertas ni «todo en orden» (no se sabe aún), solo se invita a medir. */
+function NoChecks() {
+  const { t } = useI18n()
+  return (
+    <section className="rounded-2xl border border-edge bg-panel p-5 sm:p-6">
+      <h2 className="m-0 font-display text-2xl font-semibold text-text">{t('guidance.noChecks.title')}</h2>
+      <p className="mb-0 mt-1 text-mute">{t('guidance.noChecks.body')}</p>
+    </section>
   )
 }
 

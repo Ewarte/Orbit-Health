@@ -4,7 +4,7 @@
 */
 import { messages, type Lang, type MessageKey } from './i18n'
 import type { I18n } from './useI18n'
-import type { Indicator, Notice, Status, Zone } from '../types'
+import type { Indicator, Status, Zone } from '../types'
 
 type T = I18n['t']
 
@@ -73,18 +73,6 @@ export function zoneName(t: T, zone: Pick<Zone, 'id' | 'name'>): string {
 
 export function zoneAbout(t: T, zone: Pick<Zone, 'id' | 'about'>): string {
   return tOr(t, `zone.${zone.id}.about`, zone.about)
-}
-
-export function noticeTitle(t: T, notice: Notice): string {
-  return tOr(t, `notice.${notice.indicatorId}.title`, notice.title)
-}
-
-export function noticeSummary(t: T, notice: Notice): string {
-  return tOr(t, `notice.${notice.indicatorId}.summary`, notice.summary)
-}
-
-export function noticeSteps(t: T, notice: Notice): string[] {
-  return notice.steps.map((step, index) => tOr(t, `notice.${notice.indicatorId}.step${index + 1}`, step))
 }
 
 /** Fecha corta con el idioma activo (por ejemplo «14 nov 2026» o «Nov 14, 2026»). */

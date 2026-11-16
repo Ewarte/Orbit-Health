@@ -23,6 +23,8 @@ export const REMINDER_WINDOW_MINUTES = 60
 
 export const ROUTINE_STORAGE_KEY = 'orbit_health_routine'
 export const REMINDERS_STORAGE_KEY = 'orbit_health_routine_reminders'
+/** Avisos del sistema ya enviados hoy (para no repetirlos aunque se recargue la app). */
+export const NOTIFIED_STORAGE_KEY = 'orbit_health_routine_notified'
 
 /** Lo que se guarda de la rutina: es de un solo día y se reinicia al cambiar la fecha. */
 export interface RoutineDay {
@@ -117,4 +119,31 @@ export function dueReminders(
       !day.dismissed.includes(task.id)
     )
   })
+}
+
+/** Qué avisos del sistema ya se enviaron en el día `key`. Dañado o de otro día: ninguno. */
+export function parseNotified(raw: string | null, key: string): RoutineTaskId[] {
+  if (!raw) return []
+  try {
+    const data: unknown = JSON.parse(raw)
+    if (typeof data !== 'object' || data === null || Array.isArray(data)) return []
+    const { date, ids } = data as { date?: unknown; ids?: unknown }
+    return date === key && Array.isArray(ids) ? ids.filter(isTaskId) : []
+  } catch {
+    return []
+  }
+}
+
+/**
+ * Avisos del sistema que faltan por enviar: «una sola vez por tarea y día».
+ * Devuelve las tareas nuevas y el texto a guardar con todas las ya avisadas hoy.
+ */
+export function pendingNotifications(
+  due: readonly RoutineTask[],
+  key: string,
+  raw: string | null,
+): { fresh: RoutineTaskId[]; next: string } {
+  const already = parseNotified(raw, key)
+  const fresh = due.map((task) => task.id).filter((id) => !already.includes(id))
+  return { fresh, next: JSON.stringify({ date: key, ids: [...already, ...fresh] }) }
 }

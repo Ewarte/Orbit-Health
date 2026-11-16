@@ -1,19 +1,32 @@
 import { useState } from 'react'
-import { noticeSteps, noticeSummary, noticeTitle } from '../../lib/domainText'
+import { indicatorName } from '../../lib/domainText'
 import { useI18n } from '../../lib/useI18n'
-import type { Notice } from '../../types'
+import type { Alert } from './guidanceLogic'
 
-/** Aviso de atención con los pasos a seguir, desplegables. */
-export function NoticeCard({ notice, onGuidance }: { notice: Notice; onGuidance?: () => void }) {
+/** Textos del aviso a partir de una alerta en vivo: título, resumen y pasos de la guía, en el idioma activo. */
+function useNoticeText(alert: Alert) {
+  const { lang, t } = useI18n()
+  const { indicator, entry } = alert
+  const name = entry?.name[lang] ?? indicatorName(t, indicator)
+  return {
+    title: t(indicator.status === 'act' ? 'notice.title.act' : 'notice.title.watch', { name }),
+    summary: entry?.meaning[lang] ?? t('guidance.generic.meaning'),
+    steps: entry?.doNow[lang] ?? [t('guidance.generic.doNow')],
+  }
+}
+
+/** Aviso de atención con los pasos a seguir, desplegables. Sale de una alerta en vivo (no de avisos escritos a mano). */
+export function NoticeCard({ alert, onGuidance }: { alert: Alert; onGuidance?: () => void }) {
   const { t } = useI18n()
   const [open, setOpen] = useState(false)
-  const stepsId = `steps-${notice.indicatorId}`
+  const { title, summary, steps } = useNoticeText(alert)
+  const stepsId = `steps-${alert.indicator.id}`
 
   return (
     <section className="mt-4 rounded-lg border border-notice-edge bg-notice px-4 py-3.5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="m-0 max-w-[52ch]">
-          <b>{noticeTitle(t, notice)}</b> {noticeSummary(t, notice)}
+          <b>{title}</b> {summary}
         </p>
         <button
           type="button"
@@ -28,7 +41,7 @@ export function NoticeCard({ notice, onGuidance }: { notice: Notice; onGuidance?
       </div>
       {open && (
         <ol id={stepsId} className="mt-3 mb-1 list-decimal pl-6">
-          {noticeSteps(t, notice).map((step) => (
+          {steps.map((step) => (
             <li key={step} className="mb-1">
               {step}
             </li>

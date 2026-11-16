@@ -90,7 +90,15 @@ Registro de las decisiones tomadas del 14 al 15 de noviembre de 2026, con el mot
 
 ### 11. Rutina con recordatorios, sin rachas
 - **Decisión:** la rutina se reinicia cada día de misión y cada tarea tiene recordatorio. Sin rachas ni puntos.
-- **Por qué:** decisión del equipo. Los recordatorios usan el reloj de la misión (punto 5). Solo suenan con la app abierta.
+- **Por qué:** decisión del equipo. Los recordatorios usan el reloj de la misión (punto 5). Funcionan en cualquier pantalla (aviso global) y la notificación del sistema sale una sola vez por tarea y día. Solo suenan con la app abierta.
+
+### 12. Orden de las alertas
+- **Decisión (2026-11-16):** primero lo más grave («actuar ya» antes que «vigilar»); a igual estado, **oxígeno › respiración › frecuencia cardíaca › presión › temperatura › el resto**. El aviso grande de «Hoy» y Orientación siguen ese orden.
+- **Por qué:** con dos alertas críticas, la que compromete antes la vida va primero. Antes desempataba el orden de la lista, que ponía la presión por delante del oxígeno.
+
+### 13. Usuario nuevo en blanco y Tendencias de demostración
+- **Decisión (2026-11-15):** la app abre en «Hoy». Un usuario sin chequeos no ve alertas ni valores inventados: «Hoy» invita a hacer el primer chequeo. Tendencias usa todos los chequeos reales y completa los días vacíos con una simulación **marcada como datos de demostración** (punto relleno = real, vacío = simulado).
+- **Por qué:** presentar valores de ejemplo como medidas reales es engañoso en una app de salud; la simulación se mantiene solo para mostrar cómo se ven las tendencias, siempre rotulada.
 
 ## Pendientes conocidos
 1. Revisión médica de umbrales y guías (punto 3).

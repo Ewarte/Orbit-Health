@@ -1,8 +1,10 @@
-import { PanelRightClose, PanelRightOpen } from 'lucide-react'
+import { ClipboardCheck, PanelRightClose, PanelRightOpen } from 'lucide-react'
 import { useState } from 'react'
 import { NoticeCard } from '../../features/guidance/NoticeCard'
+import { activeAlerts } from '../../features/guidance/guidanceLogic'
+import { formatUtcHHMM } from '../../features/measurements/dailyCheckData'
 import { statusUi, worstStatus } from '../../lib/status'
-import type { Indicator, Mission, Notice, Status, Zone, ZoneId } from '../../types'
+import type { Indicator, Mission, Status, Zone, ZoneId } from '../../types'
 import { HologramaUnificado } from '../health/HologramaUnificado'
 import { useI18n } from '../../lib/useI18n'
 import { indicatorName, indicatorValue, statusLabel, unitLabel } from '../../lib/domainText'
@@ -20,12 +22,16 @@ function readPanelOpen(): boolean {
 interface Props {
   mission: Mission
   zones: Zone[]
+  /** Indicadores evaluados del último chequeo real; vacío si el usuario aún no ha hecho ninguno. */
   indicators: Indicator[]
-  notices: Notice[]
+  /** Fecha ISO del último chequeo real, o null si no hay. */
+  lastCheckAt?: string | null
   onGuidance?: () => void
+  /** Abre el asistente del primer chequeo (botón del estado vacío). */
+  onStartCheck?: () => void
 }
 
-export function DashboardPage({ mission, zones, indicators, notices, onGuidance }: Props) {
+export function DashboardPage({ mission, zones, indicators, lastCheckAt = null, onGuidance, onStartCheck }: Props) {
   const zoneStatus = (id: ZoneId): Status | undefined =>
     worstStatus(indicators.filter((i) => i.zone === id).map((i) => i.status))
 
@@ -49,6 +55,10 @@ export function DashboardPage({ mission, zones, indicators, notices, onGuidance 
   }
 
   const attention = indicators.filter((i) => i.status !== 'ok')
+  // El aviso grande sale de las alertas en vivo: la más grave primero; sin alertas, no hay aviso.
+  const topAlert = activeAlerts(indicators)[0]
+  const empty = indicators.length === 0
+  const lastCheckHHMM = formatUtcHHMM(lastCheckAt)
 
   const figureZones = Object.fromEntries(
     zones.map((z) => [z.id, zoneStatus(z.id)]),
@@ -62,7 +72,9 @@ export function DashboardPage({ mission, zones, indicators, notices, onGuidance 
         <div>
           <h1 className="m-0 font-display text-2xl sm:text-3xl font-semibold">{t('dash.missionDay', { day: mission.day })}</h1>
           <p className="m-0 text-sm text-mute">
-            {t('dash.lastCheck', { place: mission.place, time: mission.lastCheck })}
+            {lastCheckHHMM
+              ? t('dash.lastCheck', { place: mission.place, time: `${lastCheckHHMM} UTC` })
+              : t('dash.noCheckYet', { place: mission.place })}
           </p>
         </div>
 
@@ -97,6 +109,22 @@ export function DashboardPage({ mission, zones, indicators, notices, onGuidance 
           aria-label={t('nav.today')}
           className={`min-w-0 space-y-3 [&_section]:mt-0 ${panelOpen ? '' : 'lg:hidden'}`}
         >
+          {empty && (
+            <section aria-label={t('dash.empty.title')} className="rounded-xl border border-edge bg-panel p-4">
+              <h2 className="m-0 font-display text-lg font-semibold text-text">{t('dash.empty.title')}</h2>
+              <p className="mb-0 mt-1 text-sm text-mute">{t('dash.empty.body')}</p>
+              {onStartCheck && (
+                <button
+                  type="button"
+                  onClick={onStartCheck}
+                  className="mt-3 inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border-2 border-ok bg-notice px-4 py-2 font-semibold text-ok hover:brightness-110"
+                >
+                  <ClipboardCheck className="h-4 w-4" aria-hidden="true" /> {t('dash.empty.cta')}
+                </button>
+              )}
+            </section>
+          )}
+
           {attention.length > 0 && (
             <section aria-label={t('dash.attention')} className="rounded-xl border border-edge bg-panel p-3">
               <ul className="m-0 grid list-none gap-2 p-0">
@@ -125,11 +153,9 @@ export function DashboardPage({ mission, zones, indicators, notices, onGuidance 
             </section>
           )}
 
-          {notices.length > 0 && (
+          {topAlert && (
             <section aria-label={t('dash.notices')} className="space-y-3">
-              {notices.map((notice) => (
-                <NoticeCard key={notice.indicatorId} notice={notice} onGuidance={onGuidance} />
-              ))}
+              <NoticeCard key={topAlert.indicator.id} alert={topAlert} onGuidance={onGuidance} />
             </section>
           )}
         </aside>

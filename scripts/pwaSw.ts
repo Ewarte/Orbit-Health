@@ -3,8 +3,12 @@
   El plugin de Vite (scripts/pwaPlugin.ts) la usa al terminar el build.
 */
 
-/** Archivos que nunca se precachean: el propio service worker y los mapas de código. */
-const EXCLUIDOS = /(^|\/)sw\.js$|\.map$/
+/**
+ * Archivos que nunca se precachean: el propio service worker, los mapas de código,
+ * las fuentes .woff (basta .woff2, que usan todos los navegadores actuales),
+ * el documento de atribuciones y el sprite de íconos, que la app no usa.
+ */
+const EXCLUIDOS = /(^|\/)sw\.js$|\.map$|\.woff$|(^|\/)ATRIBUCIONES\.md$|(^|\/)icons\.svg$/
 
 /**
  * Arma la lista de archivos a precachear a partir de las rutas de salida del build.
@@ -32,23 +36,27 @@ self.addEventListener('install', (evento) => {
   evento.waitUntil(
     caches
       .open(CACHE)
-      .then((cache) => cache.addAll(ARCHIVOS.map(aUrl)))
-      .then(() => self.skipWaiting()),
+      .then((cache) => cache.addAll(ARCHIVOS.map(aUrl))),
   )
+  // La versión nueva espera hasta que el usuario pulse «Actualizar» (no se activa sola).
+})
+
+self.addEventListener('message', (evento) => {
+  if (evento.data && evento.data.type === 'SKIP_WAITING') self.skipWaiting()
 })
 
 self.addEventListener('activate', (evento) => {
+  // Primero toma el control; los cachés viejos se borran solo después.
   evento.waitUntil(
-    caches
-      .keys()
+    Promise.resolve(self.clients.claim())
+      .then(() => caches.keys())
       .then((nombres) =>
         Promise.all(
           nombres
             .filter((n) => n.startsWith('orbit-health-') && n !== CACHE)
             .map((n) => caches.delete(n)),
         ),
-      )
-      .then(() => self.clients.claim()),
+      ),
   )
 })
 

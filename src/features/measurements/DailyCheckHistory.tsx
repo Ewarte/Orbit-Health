@@ -1,4 +1,6 @@
+import { useId } from 'react'
 import { Check, Database, X } from 'lucide-react'
+import { useDialogFocus } from '../../hooks/useDialogFocus'
 import { formatClock, formatDate, moodLabel } from '../../lib/domainText'
 import { useI18n } from '../../lib/useI18n'
 import type { SavedRecord } from './dailyCheckTypes'
@@ -7,17 +9,20 @@ interface Props { records: SavedRecord[]; onClose: () => void }
 
 export function DailyCheckHistory({ records, onClose }: Props) {
   const { t } = useI18n()
+  const titleId = useId()
+  const { dialogoRef, tituloRef } = useDialogFocus({ onClose })
   return (
-    <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
+    <div role="dialog" aria-modal="true" aria-labelledby={titleId} ref={dialogoRef} tabIndex={-1} className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
       <div className="relative w-full max-w-2xl rounded-2xl border border-edge bg-bg p-4 shadow-2xl sm:p-6">
         <header className="flex items-center justify-between border-b border-edge pb-4">
-          <h2 className="flex items-center gap-2.5 font-display text-xl font-bold text-text"><Database className="h-5 w-5 text-ok" /> {t('history.title', { n: records.length })}</h2>
-          <button type="button" onClick={onClose} className="rounded-lg p-2 text-mute hover:bg-panel hover:text-text" aria-label={t('common.close')}><X className="h-5 w-5" /></button>
+          <h2 id={titleId} ref={tituloRef} tabIndex={-1} className="flex items-center gap-2.5 font-display text-xl font-bold text-text focus:outline-none"><Database className="h-5 w-5 text-ok" /> {t('history.title', { n: records.length })}</h2>
+          <button type="button" onClick={onClose} className="inline-flex h-11 w-11 items-center justify-center rounded-lg text-mute hover:bg-panel hover:text-text" aria-label={t('common.close')}><X className="h-5 w-5" /></button>
         </header>
         <div className="mt-4 max-h-[60vh] space-y-3 overflow-y-auto pr-1">
+          {records.length === 0 && <p className="m-0 text-sm text-mute">{t('history.empty')}</p>}
           {records.map((record) => <RecordItem key={record.id} record={record} />)}
         </div>
-        <footer className="mt-5 flex justify-end border-t border-edge pt-4"><button type="button" onClick={onClose} className="rounded-lg bg-panel px-4 py-2 text-sm font-semibold text-text hover:bg-edge">{t('common.close')}</button></footer>
+        <footer className="mt-5 flex justify-end border-t border-edge pt-4"><button type="button" onClick={onClose} className="min-h-11 rounded-lg bg-panel px-4 py-2 text-sm font-semibold text-text hover:bg-edge">{t('common.close')}</button></footer>
       </div>
     </div>
   )

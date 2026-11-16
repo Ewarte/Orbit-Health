@@ -9,7 +9,7 @@ Archivo: `src/assets/anatomia.glb`
   https://dbarchive.biosciencedbc.jp/en/bodyparts3d/lic.html
 - Texto de atribución pedido por la página oficial: «BodyParts3D, © The Database Center for Life Science licensed under CC Attribution 4.0 International».
 - Descarga: https://dbarchive.biosciencedbc.jp/en/bodyparts3d/download.html (archivo `partof_BP3D_4.0_obj_99.zip`).
-- Cambios hechos al material original: se eligieron 34 grupos de partes (esqueleto completo, 13 órganos y la piel), se unieron las piezas de cada grupo en una sola malla, se pasaron de milímetros con eje Z hacia arriba a metros con eje Y hacia arriba, se simplificó la malla y se comprimió con meshopt. Es un modelo educativo, no sirve para diagnóstico. No incluye bazo: el conjunto de datos descargado no trae esa parte.
+- Cambios hechos al material original: se eligieron 34 grupos de partes (18 mallas de esqueleto, 15 de órganos y 1 de piel), se unieron las piezas de cada grupo en una sola malla, se pasaron de milímetros con eje Z hacia arriba a metros con eje Y hacia arriba, se simplificó la malla y se comprimió con meshopt. Es un modelo educativo, no sirve para diagnóstico. No incluye bazo: el conjunto de datos descargado no trae esa parte.
 
 Mallas incluidas (nombre en el GLB → parte de BodyParts3D e identificador FMA). Cuando una malla agrupa varias partes se indican todas.
 

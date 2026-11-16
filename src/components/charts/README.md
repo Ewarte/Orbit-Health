@@ -1,7 +1,7 @@
 # src/components/charts
 
-**Qué va aquí:** Gráficas: tendencia mínima y gráfica de detalle con franja de rango normal.
+**Qué va aquí:** Gráficas reutilizables.
 
 **Quién:** R5
 
-**Ahora hay:** `Sparkline.tsx`. Falta la gráfica de detalle.
+**Ahora hay:** `Sparkline.tsx` (mini gráfica de tendencia). La gráfica de detalle vive en la pantalla Tendencias (`src/features/trends/TrendsPage.tsx`).

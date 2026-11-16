@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { createRecord, CURRENT_METRICS_KEY, normalizeMetrics, STORAGE_KEY } from './dailyCheckData'
+import { createRecord, CURRENT_METRICS_KEY, defaultMetrics, formatUtcHHMM, MAX_RECORDS, normalizeMetrics, parseRecords, STORAGE_KEY } from './dailyCheckData'
 import type { DailyMetrics, SavedRecord } from './dailyCheckTypes'
 
 function readStorage<T>(key: string, fallback: T): T {
@@ -11,25 +11,26 @@ function readStorage<T>(key: string, fallback: T): T {
   }
 }
 
-export function useDailyCheck(onComplete?: (metrics: DailyMetrics) => void) {
-  const [metrics, setMetrics] = useState<DailyMetrics>(() => normalizeMetrics(readStorage<unknown>(CURRENT_METRICS_KEY, null)))
-  const [savedRecords, setSavedRecords] = useState<SavedRecord[]>(() => {
-    const raw = readStorage<unknown>(STORAGE_KEY, [])
-    if (!Array.isArray(raw)) return []
-    return raw.map((record: SavedRecord) => ({ ...record, metrics: normalizeMetrics(record?.metrics) }))
-  })
-  const [lastSavedTime, setLastSavedTime] = useState('07:10')
-  /** Aviso tras guardar: se guarda el tipo y la hora, y la pantalla lo traduce al mostrarlo. */
-  const [notification, setNotification] = useState<{ kind: 'all' | 'assistant'; time: string } | null>(null)
+/**
+ * Última medida real guardada: el chequeo más reciente del historial o, si no hay historial,
+ * las medidas actuales que guardaron versiones anteriores (migración). Sin nada guardado, null:
+ * un usuario nuevo empieza en blanco.
+ */
+export function readMeasuredMetrics(): DailyMetrics | null {
+  const records = parseRecords(readStorage<unknown>(STORAGE_KEY, []))
+  if (records.length > 0) return records[0].metrics
+  const legacy = readStorage<unknown>(CURRENT_METRICS_KEY, null)
+  return legacy && typeof legacy === 'object' && !Array.isArray(legacy) && Object.keys(legacy).length > 0 ? normalizeMetrics(legacy) : null
+}
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(savedRecords))
-      localStorage.setItem(CURRENT_METRICS_KEY, JSON.stringify(metrics))
-    } catch {
-      // El modo privado puede bloquear localStorage; la sesión continúa en memoria.
-    }
-  }, [metrics, savedRecords])
+/** Aviso tras guardar: se guarda el tipo y la hora UTC, y la pantalla lo traduce al mostrarlo. */
+export type SaveNotification = { kind: 'all' | 'assistant'; time: string }
+
+export function useDailyCheck(onComplete?: (metrics: DailyMetrics, record: SavedRecord) => void) {
+  const [savedRecords, setSavedRecords] = useState<SavedRecord[]>(() => parseRecords(readStorage<unknown>(STORAGE_KEY, [])))
+  /** Última medida real; null mientras no haya ningún chequeo. */
+  const [measured, setMeasured] = useState<DailyMetrics | null>(() => readMeasuredMetrics())
+  const [notification, setNotification] = useState<SaveNotification | null>(null)
 
   useEffect(() => {
     if (!notification) return
@@ -39,20 +40,35 @@ export function useDailyCheck(onComplete?: (metrics: DailyMetrics) => void) {
 
   function save(metricsToSave: DailyMetrics, kind: 'all' | 'assistant') {
     const record = createRecord(metricsToSave)
-    setMetrics(metricsToSave)
-    setSavedRecords((records) => [record, ...records])
-    setLastSavedTime(record.timeStr)
-    setNotification({ kind, time: record.timeStr })
-    onComplete?.(metricsToSave)
+    const next = [record, ...savedRecords].slice(0, MAX_RECORDS)
+    setMeasured(metricsToSave)
+    setSavedRecords(next)
+    setNotification({ kind, time: `${formatUtcHHMM(record.timestamp)} UTC` })
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+      localStorage.setItem(CURRENT_METRICS_KEY, JSON.stringify(metricsToSave))
+    } catch {
+      // El modo privado puede bloquear localStorage; la sesión continúa en memoria.
+    }
+    onComplete?.(metricsToSave, record)
   }
 
   return {
-    metrics,
+    /** Última medida real (null si aún no hay chequeos). */
+    measured,
+    /** Posición inicial de los controles: la última medida o, sin ella, los valores por defecto. */
+    metrics: measured ?? defaultMetrics,
     savedRecords,
-    lastSavedTime,
+    /** Fecha ISO del último chequeo real, o null. */
+    lastCheckAt: savedRecords[0]?.timestamp ?? null,
     notification,
     dismissNotification: () => setNotification(null),
-    saveAll: () => save(metrics, 'all'),
     saveAssistant: (nextMetrics: DailyMetrics) => save(nextMetrics, 'assistant'),
+    /** Guarda las medidas actuales; sin chequeo previo no guarda nada y devuelve false (la pantalla abre el asistente). */
+    saveAll: (): boolean => {
+      if (!measured) return false
+      save(measured, 'all')
+      return true
+    },
   }
 }

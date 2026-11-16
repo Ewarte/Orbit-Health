@@ -3,15 +3,20 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { I18nProvider } from '../lib/I18nProvider'
 import { LANG_STORAGE_KEY, detectLanguage, localizePlace, messages, translate } from '../lib/i18n'
 import { RoutinePage } from '../features/mission/RoutinePage'
+import { ReminderBanner } from '../features/mission/ReminderBanner'
+import { useRoutineReminders } from '../features/mission/useRoutineReminders'
 import { MissionPage } from '../features/mission/MissionPage'
 import { AppShell } from '../components/layout/AppShell'
 import {
+  NOTIFIED_STORAGE_KEY,
   ROUTINE_STORAGE_KEY,
   dayKey,
   dueReminders,
   emptyDay,
   parseEnabledReminders,
+  parseNotified,
   parseRoutineDay,
+  pendingNotifications,
 } from '../features/mission/routineLogic'
 
 const at = (hours: number, minutes: number) => new Date(2026, 10, 15, hours, minutes)
@@ -83,6 +88,32 @@ describe('lógica de la rutina', () => {
   })
 })
 
+describe('avisos del sistema: una sola vez por tarea y día', () => {
+  const due = [{ id: 'check' as const, time: '07:10' }]
+
+  it('la primera vez avisa y la segunda ya no', () => {
+    const first = pendingNotifications(due, '2026-11-15', null)
+    expect(first.fresh).toEqual(['check'])
+    const second = pendingNotifications(due, '2026-11-15', first.next)
+    expect(second.fresh).toEqual([])
+  })
+
+  it('avisa otra vez al día siguiente y ante datos dañados', () => {
+    const first = pendingNotifications(due, '2026-11-15', null)
+    expect(pendingNotifications(due, '2026-11-16', first.next).fresh).toEqual(['check'])
+    expect(parseNotified('no es json', '2026-11-15')).toEqual([])
+    expect(parseNotified('["check"]', '2026-11-15')).toEqual([])
+  })
+
+  it('suma tareas nuevas sin repetir las ya avisadas', () => {
+    const first = pendingNotifications(due, '2026-11-15', null)
+    const both = [...due, { id: 'exercise' as const, time: '10:00' }]
+    const second = pendingNotifications(both, '2026-11-15', first.next)
+    expect(second.fresh).toEqual(['exercise'])
+    expect(parseNotified(second.next, '2026-11-15')).toEqual(['check', 'exercise'])
+  })
+})
+
 describe('pantallas', () => {
   beforeEach(() => {
     localStorage.clear()
@@ -97,10 +128,21 @@ describe('pantallas', () => {
     vi.useRealTimers()
   })
 
-  const renderRoutine = () =>
+  /** La app real calcula los recordatorios a nivel de App: aquí un arnés hace lo mismo. */
+  function Harness({ screen = 'routine' }: { screen?: 'routine' | 'other' }) {
+    const routine = useRoutineReminders()
+    return (
+      <>
+        {screen === 'routine' ? <RoutinePage routine={routine} /> : <p>otra pantalla</p>}
+        <ReminderBanner routine={routine} />
+      </>
+    )
+  }
+
+  const renderRoutine = (screen: 'routine' | 'other' = 'routine') =>
     render(
       <I18nProvider>
-        <RoutinePage />
+        <Harness screen={screen} />
       </I18nProvider>,
     )
 
@@ -138,9 +180,54 @@ describe('pantallas', () => {
     expect(screen.queryByRole('alert')).toBeNull()
   })
 
+  it('el aviso sale aunque la pantalla Rutina no esté abierta', () => {
+    renderRoutine('other')
+    expect(screen.getByText('otra pantalla')).toBeTruthy()
+    expect(screen.queryByRole('alert')).toBeNull()
+    act(() => {
+      vi.setSystemTime(at(7, 10))
+      vi.advanceTimersByTime(30_000)
+    })
+    expect(screen.getByRole('alert').textContent).toContain('Completar el chequeo diario de salud')
+    fireEvent.click(screen.getByText('Entendido'))
+    expect(screen.queryByRole('alert')).toBeNull()
+  })
+
+  it('envía la notificación del sistema una sola vez por tarea y día, aunque se recargue', () => {
+    const created: string[] = []
+    class FakeNotification {
+      static permission = 'granted'
+      constructor(_title: string, options?: { body?: string }) {
+        created.push(options?.body ?? '')
+      }
+    }
+    vi.stubGlobal('Notification', FakeNotification)
+    try {
+      renderRoutine('other')
+      act(() => {
+        vi.setSystemTime(at(7, 10))
+        vi.advanceTimersByTime(30_000)
+      })
+      act(() => {
+        vi.advanceTimersByTime(30_000)
+      })
+      expect(created).toEqual(['Completar el chequeo diario de salud'])
+      expect(JSON.parse(localStorage.getItem(NOTIFIED_STORAGE_KEY)!).ids).toEqual(['check'])
+      // «Recargar»: se desmonta y se vuelve a montar a la misma hora.
+      cleanup()
+      renderRoutine('other')
+      act(() => {
+        vi.advanceTimersByTime(30_000)
+      })
+      expect(created).toHaveLength(1)
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+
   it('no avisa de una tarea con el recordatorio apagado', () => {
     renderRoutine()
-    fireEvent.click(screen.getByLabelText(/Recordatorio activado para «Completar el chequeo diario de salud»/))
+    fireEvent.click(screen.getByRole('button', { name: 'Recordatorio de «Completar el chequeo diario de salud»', pressed: true }))
     act(() => {
       vi.setSystemTime(at(7, 10))
       vi.advanceTimersByTime(30_000)
@@ -153,7 +240,7 @@ describe('pantallas', () => {
     render(
       <I18nProvider>
         <AppShell nav={nav} current="routine" onNavigate={() => {}}>
-          <RoutinePage />
+          <Harness />
         </AppShell>
       </I18nProvider>,
     )
@@ -170,7 +257,7 @@ describe('pantallas', () => {
     render(
       <I18nProvider>
         <MissionPage
-          mission={{ environment: 'station', launchUtc: '2026-09-30T06:00:00.000Z', day: 47, place: 'Lunar transit', lastCheck: '07:10' }}
+          mission={{ environment: 'station', launchUtc: '2026-09-30T06:00:00.000Z', day: 47, place: 'Lunar transit' }}
           onSave={onSave}
         />
       </I18nProvider>,

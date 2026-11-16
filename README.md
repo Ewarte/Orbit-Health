@@ -19,7 +19,9 @@ npm run build:portable  # genera dist-portable/OrbitHealth.html (un solo archivo
 
 ## Instalación
 
-La app se puede instalar como PWA (Edge en Windows, Safari en iPad) o usar como un solo archivo `OrbitHealth.html`, y funciona sin conexión. Los pasos para el usuario y para el equipo están en [docs/INSTALACION.md](docs/INSTALACION.md). Aún no hay un sitio publicado: dónde publicar está pendiente de decidir.
+La app se puede instalar como PWA (Edge en Windows, Safari en iPad) o usar como un solo archivo `OrbitHealth.html`, y funciona sin conexión. Los pasos para el usuario y para el equipo están en [docs/INSTALACION.md](docs/INSTALACION.md).
+
+**Publicada en:** https://orbit-health-six.vercel.app/ (la administra otra persona del equipo). La dirección queda instalable y sin conexión cuando se publica una versión que incluye la PWA.
 
 ## Documentación y decisiones
 
@@ -53,13 +55,18 @@ Presión arterial (con presión media y de pulso calculadas), frecuencia cardía
 Orbit-Health/
 ├── index.html              Página base; carga src/main.tsx
 ├── package.json            Dependencias y comandos
-├── vite.config.ts          Configuración de Vite (React + Tailwind) y de las pruebas
-├── docs/                   Decisiones e informes de investigación
+├── vite.config.ts          Configuración de Vite (React + Tailwind), pruebas, PWA y versión portátil
+├── vercel.json             Cabeceras para publicar en Vercel (service worker y manifiesto sin caché)
+├── scripts/                Plugins propios de build: service worker (pwaPlugin, pwaSw) y archivo portátil (portablePlugin)
+├── docs/                   Decisiones, instalación e informes de investigación
 ├── public/
-│   ├── anatomia.glb        Modelo 3D único: piel (silueta), órganos y esqueleto (BodyParts3D, CC BY 4.0)
+│   ├── manifest.webmanifest  Manifiesto de la app instalable
+│   ├── icons/              Íconos de la app (192, 512, maskable, apple-touch)
 │   └── ATRIBUCIONES.md     Licencia y partes del modelo anatómico
 └── src/
-    ├── main.tsx            Arranque de React y proveedor de idiomas
+    ├── main.tsx            Arranque de React, proveedor de idiomas y registro del service worker (registrarSw.ts)
+    ├── assets/
+    │   └── anatomia.glb    Modelo 3D único: piel (silueta), órganos y esqueleto (BodyParts3D, CC BY 4.0)
     ├── App.tsx             Navegación, misión e indicadores en vivo
     ├── index.css           Colores, fuentes y tema. Todos los colores salen de aquí
     │

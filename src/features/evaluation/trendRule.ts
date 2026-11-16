@@ -10,7 +10,10 @@ export interface TrendRuleResult {
   messageParams?: { n: number }
 }
 
-/** Activa una alerta cuando una lectura queda fuera del rango durante 3 días seguidos. */
+/**
+ * Activa una alerta cuando 3 LECTURAS seguidas quedan fuera del rango (cuenta lecturas, no días:
+ * en Tendencias hay una lectura por día, pero la regla no lo comprueba).
+ */
 export function evaluateTrend(values: number[], min: number, max: number): TrendRuleResult {
   let consecutiveOutside = 0
   for (let index = values.length - 1; index >= 0; index -= 1) {

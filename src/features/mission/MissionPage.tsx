@@ -109,7 +109,7 @@ function MissionClock({ draft }: { draft: Draft }) {
           <>
             <ClockRow
               label={t('mission.clock.sol')}
-              value={arrivalMs !== null ? String(solNumber(nowMs, arrivalMs)) : t('mission.clock.solNone')}
+              value={arrivalMs !== null ? String(solNumber(nowMs, arrivalMs, longitude)) : t('mission.clock.solNone')}
             />
             <ClockRow label={t('mission.clock.mtc')} value={`${formatMarsHours(marsCoordinatedTime(msd))} (${t('mission.clock.marsHours')})`} />
             <ClockRow
@@ -147,7 +147,6 @@ export function MissionPage({ mission, onSave }: Props) {
       environment: draft.environment,
       launchUtc,
       place: draft.place,
-      lastCheck: mission.lastCheck,
       day: flightDay(now, parseUtc(launchUtc) ?? now),
     }
     const arrival = surface ? fromInput(draft.arrival) : undefined
@@ -167,7 +166,6 @@ export function MissionPage({ mission, onSave }: Props) {
       environment: 'station',
       launchUtc: new Date(now - 46 * DAY_MS).toISOString(),
       place: t('mission.stationPlace'),
-      lastCheck: '07:10',
       day: 47,
     }
     setDraft(draftFrom(simulated))

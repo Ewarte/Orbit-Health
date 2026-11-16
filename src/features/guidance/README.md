@@ -5,7 +5,7 @@
 **Quién:** R4 (Diego), con textos de R2
 
 **Ahora hay:**
-- `GuidancePage.tsx`: una tarjeta por cada indicador en «vigilar» o «actuar» (los críticos primero), con qué significa, qué hacer, qué hacer si empeora, cómo prevenir y a quién avisar. Si todo está normal, muestra «Todo en orden» con una costumbre preventiva por indicador.
+- `GuidancePage.tsx`: una tarjeta por cada indicador en «vigilar» o «actuar» (los críticos primero y, a igual estado, oxígeno › respiración › pulso › presión › temperatura), con qué significa, qué hacer, qué hacer si empeora, cómo prevenir y a quién avisar. Si todo está normal, muestra «Todo en orden» con una costumbre preventiva por indicador.
 - `guidanceLogic.ts`: calcula las alertas a partir de los indicadores en vivo.
 - `NoticeCard.tsx`: aviso desplegable que se usa en la pantalla Hoy.
 

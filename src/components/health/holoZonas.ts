@@ -1,26 +1,40 @@
+import { Bone, Brain, Heart, Shield, Zap, type LucideIcon } from 'lucide-react'
 import type { Status, ZoneId } from '../../types'
 import type { MessageKey } from '../../lib/i18n'
 
 /** Datos comunes de las cinco zonas del holograma. */
 export interface ZoneMeta {
   id: ZoneId
-  icon: string
+  /** Ícono de lucide-react (los emojis dependen de la fuente del sistema). */
+  icon: LucideIcon
   labelKey: MessageKey
   nameKey: MessageKey
 }
 
 export const ZONE_META: ZoneMeta[] = [
-  { id: 'head', icon: '🧠', labelKey: 'holo.zone.head.label', nameKey: 'holo.zone.head.name' },
-  { id: 'heart', icon: '❤️', labelKey: 'holo.zone.heart.label', nameKey: 'holo.zone.heart.name' },
-  { id: 'metabolism', icon: '⚡', labelKey: 'holo.zone.metabolism.label', nameKey: 'holo.zone.metabolism.name' },
-  { id: 'body', icon: '🛡️', labelKey: 'holo.zone.body.label', nameKey: 'holo.zone.body.name' },
-  { id: 'legs', icon: '🦴', labelKey: 'holo.zone.legs.label', nameKey: 'holo.zone.legs.name' },
+  { id: 'head', icon: Brain, labelKey: 'holo.zone.head.label', nameKey: 'holo.zone.head.name' },
+  { id: 'heart', icon: Heart, labelKey: 'holo.zone.heart.label', nameKey: 'holo.zone.heart.name' },
+  { id: 'metabolism', icon: Zap, labelKey: 'holo.zone.metabolism.label', nameKey: 'holo.zone.metabolism.name' },
+  { id: 'body', icon: Shield, labelKey: 'holo.zone.body.label', nameKey: 'holo.zone.body.name' },
+  { id: 'legs', icon: Bone, labelKey: 'holo.zone.legs.label', nameKey: 'holo.zone.legs.name' },
 ]
 
+/*
+  COLORES DEL LIENZO 3D (three.js no lee variables CSS, por eso van como valores).
+  Único lugar donde se escriben. Deben coincidir con los tokens de src/index.css:
+  ok = --color-ok, watch = --color-watch, act = --color-act,
+  neutro = --color-holo, resaltado = --color-holo-hi.
+*/
+export const STATUS_HEX: Record<Status, string> = {
+  ok: '#3ea86a',
+  watch: '#c25e2e',
+  act: '#f0645a',
+}
+/** Zona sin lecturas todavía. */
+export const NEUTRAL_HEX = '#00f2ff'
+
 export function getStatusColor(status?: Status): string {
-  if (status === 'act') return '#ef4444'
-  if (status === 'watch') return '#f97316'
-  return '#00f2ff'
+  return status ? STATUS_HEX[status] : NEUTRAL_HEX
 }
 
 export const STATUS_KEY: Record<Status, MessageKey> = {
@@ -30,7 +44,7 @@ export const STATUS_KEY: Record<Status, MessageKey> = {
 }
 
 /** Color con el que se resalta la zona que se está midiendo. */
-export const HIGHLIGHT = '#ff204e'
+export const HIGHLIGHT = '#ff204e' // = --color-holo-hi
 
 export interface CloudPosition {
   top?: string
