@@ -1,5 +1,7 @@
 # Investigación de modelos 3D anatómicos para la pantalla «Hoy»
 
+> **Nota (2026-11-15):** informe previo a la implementación. Al final se usó **BodyParts3D (CC BY 4.0)** como modelo único, incluida su piel como silueta; `humano.glb` ya no se usa. Ver `DECISIONES.md` §8 y `public/ATRIBUCIONES.md`.
+
 Fecha de la investigación: 15 de noviembre de 2026. Alcance: solo investigación en línea; no se descargó ningún modelo y no se tocó código ni se agregaron archivos al proyecto en D:\Orbit-Health.
 
 Aviso: lo que aquí se dice sobre licencias es un resumen de lo leído en cada página, no asesoría legal. Las dudas están marcadas con «DUDA».

@@ -30,6 +30,23 @@ describe('alertas en vivo', () => {
   it('no hay alertas si todo está normal', () => {
     expect(activeAlerts([make('bp', 'Blood pressure', 'ok')])).toEqual([])
   })
+
+  it('a igual estado desempata por urgencia: oxígeno › respiración › pulso › presión › temperatura › el resto', () => {
+    const lista = [
+      make('sleep', 'Sleep', 'act'),
+      make('temp', 'Body temperature', 'act'),
+      make('bp', 'Blood pressure', 'act'),
+      make('hr', 'Heart rate', 'act'),
+      make('resp', 'Respiratory rate', 'act'),
+      make('spo2', 'Blood oxygen', 'act'),
+    ]
+    expect(activeAlerts(lista).map((alert) => alert.indicator.id)).toEqual(['spo2', 'resp', 'hr', 'bp', 'temp', 'sleep'])
+  })
+
+  it('el estado pesa más que el desempate: una presión en «actuar» va antes que oxígeno en «vigilar»', () => {
+    const lista = [make('spo2', 'Blood oxygen', 'watch'), make('bp', 'Blood pressure', 'act')]
+    expect(activeAlerts(lista).map((alert) => alert.indicator.id)).toEqual(['bp', 'spo2'])
+  })
 })
 
 describe('contenido de las guías', () => {

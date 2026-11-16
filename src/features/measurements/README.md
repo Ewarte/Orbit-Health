@@ -1,6 +1,6 @@
 # src/features/measurements
 
-**Qué va aquí:** Chequeo diario: el asistente con el que el astronauta registra los 8 indicadores.
+**Qué va aquí:** Chequeo diario: el asistente con el que el astronauta registra sus 9 indicadores (más la glucosa, opcional).
 
 **Quién:** R5
 

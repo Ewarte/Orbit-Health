@@ -13,7 +13,9 @@ import {
   marsSolDate,
   metParts,
   missionClock,
+  DEFAULT_MARS_LONGITUDE,
   normalizeMission,
+  parseUtc,
   solNumber,
 } from '../lib/missionTime'
 
@@ -52,11 +54,64 @@ describe('Marte', () => {
     expect(formatMarsHours(13.5)).toBe('13:30:00')
   })
 
-  it('numera los soles desde la llegada', () => {
-    const arrival = Date.UTC(2026, 0, 1)
+  it('numera los soles desde la llegada, contando medianoches LMST del sitio', () => {
+    const SOL = 88_775_244
+    // Instante de la medianoche LMST del sitio más cercana después de una fecha base.
+    let midnight = Date.UTC(2026, 0, 1)
+    while (marsLocalMeanSolarTime(marsSolDate(midnight), DEFAULT_MARS_LONGITUDE) < 23) midnight += 600_000
+    while (marsLocalMeanSolarTime(marsSolDate(midnight), DEFAULT_MARS_LONGITUDE) > 1) midnight += 1_000
+    const arrival = midnight + 3_600_000 // una hora marciana después de la medianoche
     expect(solNumber(arrival, arrival)).toBe(1)
-    expect(solNumber(arrival + 88_775_244 * 3 + 1_000, arrival)).toBe(4)
-    expect(solNumber(arrival + 88_775_244 * 3 - 60_000, arrival)).toBe(3)
+    expect(solNumber(arrival + SOL * 3 + 1_000, arrival)).toBe(4)
+    expect(solNumber(arrival + SOL * 3 - 2 * 3_600_000, arrival)).toBe(3)
+  })
+})
+
+describe('parseUtc', () => {
+  it('acepta fechas con zona explícita (Z u offset)', () => {
+    expect(parseUtc('2026-10-01T12:00:00Z')).toBe(Date.UTC(2026, 9, 1, 12))
+    expect(parseUtc('2026-10-01T12:00:00.000Z')).toBe(Date.UTC(2026, 9, 1, 12))
+    expect(parseUtc('2026-10-01T14:00:00+02:00')).toBe(Date.UTC(2026, 9, 1, 12))
+    expect(parseUtc('2026-10-01T07:00:00-0500')).toBe(Date.UTC(2026, 9, 1, 12))
+  })
+
+  it('rechaza fechas sin zona, vacías o inválidas (no se leen como hora local)', () => {
+    expect(parseUtc('2026-10-01T12:00:00')).toBeNull()
+    expect(parseUtc('2026-10-01T12:00')).toBeNull()
+    expect(parseUtc('2026-10-01')).toBeNull()
+    expect(parseUtc('')).toBeNull()
+    expect(parseUtc(undefined)).toBeNull()
+    expect(parseUtc('mañana')).toBeNull()
+    expect(parseUtc('2026-13-45T99:00:00Z')).toBeNull()
+  })
+
+  it('una misión guardada con fecha sin zona usa la demostración en vez de la hora local', () => {
+    const mission = normalizeMission({ environment: 'station', launchUtc: '2026-01-01T00:00:00', place: 'ISS' }, Date.UTC(2026, 10, 15))
+    expect(flightDay(Date.UTC(2026, 10, 15), Date.parse(mission.launchUtc))).toBe(47)
+  })
+})
+
+describe('sol de Marte: un solo criterio de cambio de sol', () => {
+  const lon = 77.45
+  const arrival = Date.UTC(2026, 0, 1, 6, 0)
+  const mission = { environment: 'mars' as const, launchUtc: '2025-06-01T00:00:00.000Z', arrivalUtc: new Date(arrival).toISOString(), marsLongitudeEast: lon }
+
+  it('missionClock y solNumber dan el mismo número de sol en cualquier instante', () => {
+    for (let hours = 0; hours < 24 * 40; hours += 7) {
+      const now = arrival + hours * 3_600_000
+      expect(missionClock(now, mission).dayKey).toBe(`sol-${solNumber(now, arrival, lon)}`)
+    }
+  })
+
+  it('el sol cambia exactamente a la medianoche LMST del sitio', () => {
+    // Busca el instante en que la hora local solar pasa por 00:00 y comprueba un minuto antes y después.
+    let ms = arrival
+    while (marsLocalMeanSolarTime(marsSolDate(ms), lon) < 23) ms += 600_000
+    while (marsLocalMeanSolarTime(marsSolDate(ms), lon) > 1) ms += 60_000
+    const before = ms - 60_000
+    expect(marsLocalMeanSolarTime(marsSolDate(before), lon)).toBeGreaterThan(23.9)
+    expect(solNumber(ms, arrival, lon)).toBe(solNumber(before, arrival, lon) + 1)
+    expect(missionClock(ms, mission).dayKey).toBe(`sol-${solNumber(ms, arrival, lon)}`)
   })
 })
 
@@ -67,12 +122,13 @@ describe('misión guardada y reloj de la rutina', () => {
     const mission = normalizeMission({ day: 47, place: 'Lunar transit', lastCheck: '06:00' }, now)
     expect(mission.environment).toBe('station')
     expect(mission.place).toBe('Lunar transit')
-    expect(mission.lastCheck).toBe('06:00')
+    // El lastCheck de versiones anteriores se ignora: el último chequeo sale del historial real.
+    expect('lastCheck' in mission).toBe(false)
     expect(flightDay(now, Date.parse(mission.launchUtc))).toBe(47)
   })
 
   it('conserva el formato nuevo y usa la demostración si lo guardado está dañado', () => {
-    const saved = { environment: 'mars', launchUtc: '2026-01-01T00:00:00.000Z', place: 'Jezero', lastCheck: '07:10', marsLongitudeEast: 80 }
+    const saved = { environment: 'mars', launchUtc: '2026-01-01T00:00:00.000Z', place: 'Jezero', marsLongitudeEast: 80 }
     expect(normalizeMission(saved, now)).toMatchObject({ environment: 'mars', marsLongitudeEast: 80, place: 'Jezero' })
     expect(normalizeMission('basura', now)).toMatchObject({ environment: 'station', day: 47 })
   })
@@ -99,7 +155,7 @@ describe('pantalla de misión', () => {
   })
 
   it('muestra el reloj y cambia los campos al elegir Marte', () => {
-    const mission = { environment: 'station' as const, launchUtc: '2026-09-30T06:00:00.000Z', day: 47, place: 'ISS', lastCheck: '07:10' }
+    const mission = { environment: 'station' as const, launchUtc: '2026-09-30T06:00:00.000Z', day: 47, place: 'ISS' }
     render(createElement(I18nProvider, null, createElement(MissionPage, { mission, onSave: () => {} })))
     expect(screen.getByText('Reloj de la misión')).toBeTruthy()
     expect(screen.getByText(/T\+ \d{3}\/\d{2}:\d{2}:\d{2}/)).toBeTruthy()

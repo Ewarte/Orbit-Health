@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { DashboardPage } from '../components/dashboard/DashboardPage'
-import { notices, zones } from '../data/mock'
-import { defaultMetrics } from '../features/measurements/dailyCheckData'
+import { zones } from '../data/mock'
+import { STORAGE_KEY, defaultMetrics } from '../features/measurements/dailyCheckData'
 import { DailyCheckPage } from '../features/measurements/DailyCheckPage'
 import { evaluateDailyMetrics } from '../features/evaluation/healthEngine'
 import { evaluateTrend } from '../features/evaluation/trendRule'
@@ -15,7 +15,7 @@ import type { Mission } from '../types'
 // Los hologramas usan WebGL, que jsdom no tiene; aquí solo se prueba el texto de la pantalla.
 vi.mock('../components/health/HologramaUnificado', () => ({ HologramaUnificado: () => null }))
 
-const mission: Mission = { environment: 'transit', launchUtc: '2026-01-01T00:00:00Z', place: 'Tránsito lunar', lastCheck: '07:10', day: 47 }
+const mission: Mission = { environment: 'transit', launchUtc: '2026-01-01T00:00:00Z', place: 'Tránsito lunar', day: 47 }
 const indicators = evaluateDailyMetrics(defaultMetrics)
 
 const placeholders = (text: string) => (text.match(/\{\w+\}/g) ?? []).sort()
@@ -79,14 +79,16 @@ describe('pantallas traducidas', () => {
   })
 
   const withProvider = (node: React.ReactElement) => render(<I18nProvider>{node}</I18nProvider>)
-  const today = () => withProvider(<DashboardPage mission={mission} zones={zones} indicators={indicators} notices={notices} />)
+  const today = () => withProvider(<DashboardPage mission={mission} zones={zones} indicators={indicators} lastCheckAt="2026-11-15T12:30:00Z" />)
   const check = () => withProvider(<DailyCheckPage mission={mission} onNavigate={() => {}} />)
 
   it('Hoy: en español por defecto', () => {
     today()
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Día 47 de la misión')
-    expect(screen.getByText('Tránsito lunar, último chequeo 07:10')).toBeTruthy()
-    expect(screen.getByText('El sueño necesita atención.')).toBeTruthy()
+    expect(screen.getByText('Tránsito lunar, último chequeo 12:30 UTC')).toBeTruthy()
+    // El aviso grande sale de la alerta en vivo, con el título y el resumen de la guía.
+    expect(screen.getByText('Sueño necesita atención.')).toBeTruthy()
+    expect(screen.getByText(/Dormir poco empeora el rendimiento/)).toBeTruthy()
     expect(screen.getByText('Ver qué hacer')).toBeTruthy()
     expect(screen.getAllByText('Sueño').length).toBeGreaterThan(0)
     expect(screen.queryByText(/Mission day/)).toBeNull()
@@ -104,9 +106,10 @@ describe('pantallas traducidas', () => {
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Mission day 47')
     expect(screen.getByText('Sleep needs attention.')).toBeTruthy()
     expect(screen.getByText('See what to do')).toBeTruthy()
+    expect(screen.getByText('Tránsito lunar, last check 12:30 UTC')).toBeTruthy()
     expect(screen.getAllByText('Sleep').length).toBeGreaterThan(0)
     expect(screen.getByRole('button', { name: /Hide panel/ })).toBeTruthy()
-    expect(screen.queryByText('El sueño necesita atención.')).toBeNull()
+    expect(screen.queryByText('Sueño necesita atención.')).toBeNull()
   })
 
   it('Chequeo diario: en español por defecto', () => {
@@ -115,7 +118,10 @@ describe('pantallas traducidas', () => {
     expect(screen.getByText('Revisa tu salud')).toBeTruthy()
     expect(screen.getByText('Registrar datos')).toBeTruthy()
     expect(screen.getByText('Presión arterial')).toBeTruthy()
-    expect(screen.getByText('Bien')).toBeTruthy()
+    // Sin chequeos las tarjetas no muestran valores inventados.
+    expect(screen.queryByText('Bien')).toBeNull()
+    expect(screen.getAllByText('—').length).toBeGreaterThan(0)
+    expect(screen.getByText('Tránsito lunar, todavía sin chequeos')).toBeTruthy()
     expect(screen.queryByText('Blood pressure')).toBeNull()
     expect(screen.queryByText(/Record data/)).toBeNull()
     fireEvent.click(screen.getAllByRole('button', { name: /Modificar valores/ })[0])
@@ -130,16 +136,25 @@ describe('pantallas traducidas', () => {
     expect(screen.getByText('Check your health')).toBeTruthy()
     expect(screen.getByText('Record data')).toBeTruthy()
     expect(screen.getByText('Blood pressure')).toBeTruthy()
-    expect(screen.getByText('Good')).toBeTruthy()
     expect(screen.queryByText('Registrar datos')).toBeNull()
     fireEvent.click(screen.getAllByRole('button', { name: /Edit values/ })[0])
     expect(screen.getByText('Step 1 of 10')).toBeTruthy()
   })
 
-  it('Chequeo diario: el aviso al guardar sale en el idioma activo', () => {
+  it('Chequeo diario: con un chequeo previo, el aviso al guardar sale en el idioma activo y en hora UTC', () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify([{ id: 'r1', timestamp: '2026-11-14T08:00:00.000Z', timeStr: '', dateStr: '', metrics: defaultMetrics }]))
+    check()
+    expect(screen.getByText('Tránsito lunar, último chequeo 08:00 UTC')).toBeTruthy()
+    fireEvent.click(screen.getByText('Registrar datos'))
+    expect(screen.getByRole('status').textContent).toMatch(/Datos registrados correctamente en la telemetría local \(\d{2}:\d{2} UTC\)\./)
+  })
+
+  it('Chequeo diario: sin chequeo previo, «Registrar datos» abre el asistente y no guarda valores inventados', () => {
     check()
     fireEvent.click(screen.getByText('Registrar datos'))
-    expect(screen.getByRole('status').textContent).toMatch(/Datos registrados correctamente en la telemetría local \(\d{2}:\d{2}\)\./)
+    expect(screen.getByText('Paso 1 de 10')).toBeTruthy()
+    expect(screen.queryByText(/Datos registrados|Chequeo completado/)).toBeNull()
+    expect(localStorage.getItem(STORAGE_KEY)).toBeNull()
   })
 
   it('Tendencias: en español por defecto y en inglés al cambiar', () => {

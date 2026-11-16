@@ -26,6 +26,38 @@
   --color-act: #f0645a;
   --color-select: #6366f1;
 
+  /* Variantes de apoyo para texto y fondos tenues sobre superficies oscuras. */
+  --color-ok-soft: #5cc98b;
+  --color-ok-tint: #184840;
+  --color-ok-tint-2: #143734;
+  --color-amber: #f2b544;
+  --color-amber-tint: #2a2a1c;
+  --color-card: #14283d;
+  --color-card-hover: #17324c;
+  --color-panel-hover: #1c3f5e;
+  --color-tooltip: #102438;
+
+  /* Series de las gráficas de Tendencias (una por indicador). */
+  --color-serie-hr: var(--color-ok-soft);
+  --color-serie-sys: var(--color-act);
+  --color-serie-dia: var(--color-amber);
+  --color-serie-sleep: #a78bfa;
+  --color-serie-glucose: #38bdf8;
+  --color-serie-temp: #fb923c;
+  --color-serie-mood: #e879f9;
+  --color-serie-spo2: #2dd4bf;
+  --color-serie-radiation: #facc15;
+
+  /* Holograma 3D: tonos de la interfaz que lo rodea. */
+  --color-holo: #00f2ff;
+  --color-holo-hi: #ff204e;
+  --color-holo-deep: #05101c;
+  --color-holo-mid: #071d33;
+  --color-holo-low: #020b14;
+  --color-holo-edge: #0e7490;
+  --color-holo-panel: #083344;
+  --color-holo-text: #a5f3fc;
+
   /* Aviso de atención (fondo y borde) */
   --color-notice: #2a1f1a;
   --color-notice-edge: #7c3a21;
@@ -64,4 +96,44 @@ body {
     transition: none !important;
     animation: none !important;
   }
+}
+
+/*
+  Deslizadores grandes para usar con guantes: pista alta, pulgar de 32 px y
+  área táctil de 44 px de alto (la del propio elemento).
+*/
+.rango-tactil {
+  appearance: none;
+  -webkit-appearance: none;
+  height: 44px;
+  background: transparent;
+  cursor: pointer;
+  touch-action: pan-y;
+}
+.rango-tactil::-webkit-slider-runnable-track {
+  height: 14px;
+  border-radius: 9999px;
+  background: var(--color-edge);
+}
+.rango-tactil::-moz-range-track {
+  height: 14px;
+  border-radius: 9999px;
+  background: var(--color-edge);
+}
+.rango-tactil::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 32px;
+  height: 32px;
+  margin-top: -9px;
+  border-radius: 9999px;
+  border: 3px solid var(--color-text);
+  background: var(--color-ok);
+}
+.rango-tactil::-moz-range-thumb {
+  width: 26px;
+  height: 26px;
+  border-radius: 9999px;
+  border: 3px solid var(--color-text);
+  background: var(--color-ok);
 }

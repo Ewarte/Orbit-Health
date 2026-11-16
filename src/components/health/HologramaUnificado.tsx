@@ -566,7 +566,7 @@ function Scene({ selectedZone, view, zonesStatus, autoRotate, onSelectZone, onSe
       {labelPos && organLabel && (
         <Html position={labelPos} center zIndexRange={[40, 0]} style={{ pointerEvents: 'none' }}>
           <div
-            className="-translate-y-6 whitespace-nowrap rounded-lg border border-red-500/70 bg-[#05101c]/90 px-2.5 py-1 font-mono text-xs font-semibold uppercase tracking-wide text-white shadow-[0_0_14px_rgba(255,32,78,0.45)]"
+            className="-translate-y-6 whitespace-nowrap rounded-lg border border-holo-hi/70 bg-holo-deep/90 px-2.5 py-1 font-mono text-xs font-semibold uppercase tracking-wide text-text shadow-[0_0_14px_color-mix(in_srgb,var(--color-holo-hi)_45%,transparent)]"
             role="status"
           >
             {organLabel}
@@ -645,7 +645,7 @@ export function HologramaUnificado({ selectedZone = 'heart', onSelectZone, zones
         <button
           type="button"
           onClick={goGeneral}
-          className="flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-xl border border-cyan-500/40 bg-cyan-950/60 px-4 font-mono text-xs uppercase tracking-wide text-cyan-200 transition-colors hover:border-cyan-300 hover:bg-cyan-900/70 focus-visible:outline-2 focus-visible:outline-cyan-300"
+          className="flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-xl border border-holo-edge bg-holo-panel/60 px-4 font-mono text-xs uppercase tracking-wide text-holo-text transition-colors hover:border-holo hover:bg-holo-panel focus-visible:outline-2 focus-visible:outline-holo"
         >
           {t('holo.overview')}
         </button>

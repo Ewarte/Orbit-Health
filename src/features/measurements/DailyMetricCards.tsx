@@ -3,10 +3,11 @@ import { moodLabel } from '../../lib/domainText'
 import { useI18n } from '../../lib/useI18n'
 import type { I18n } from '../../lib/useI18n'
 import { derivedBloodPressure } from '../evaluation/healthEngine'
-import type { StepId } from './dailyCheckData'
+import { defaultMetrics, type StepId } from './dailyCheckData'
 import type { DailyMetrics } from './dailyCheckTypes'
 
-interface Props { metrics: DailyMetrics; onSelect: (step: StepId) => void }
+/** metrics null = aún no hay chequeos: las tarjetas muestran un guion en vez de valores inventados. */
+interface Props { metrics: DailyMetrics | null; onSelect: (step: StepId) => void }
 
 type T = I18n['t']
 
@@ -40,6 +41,8 @@ const cards: Card[] = [
 
 export function DailyMetricCards({ metrics, onSelect }: Props) {
   const { t } = useI18n()
+  const empty = metrics === null
+  const values = metrics ?? defaultMetrics
   return (
     <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-5 lg:gap-3">
       {cards.map(({ id, icon: Icon, value, unit, extra }) => (
@@ -52,10 +55,10 @@ export function DailyMetricCards({ metrics, onSelect }: Props) {
             <span className="flex h-5 w-5 items-center justify-center rounded-full bg-notice text-ok lg:hidden xl:flex"><Check className="h-3.5 w-3.5 stroke-[3]" /></span>
           </div>
           <div className="mt-4 flex items-baseline gap-1.5">
-            <span className="font-display text-2xl font-bold tracking-tight text-text sm:text-3xl lg:text-2xl">{value(metrics, t)}</span>
-            {unit(metrics, t) && <span className="text-sm text-mute">{unit(metrics, t)}</span>}
+            <span className="font-display text-2xl font-bold tracking-tight text-text sm:text-3xl lg:text-2xl">{empty ? '—' : value(values, t)}</span>
+            {!empty && unit(values, t) && <span className="text-sm text-mute">{unit(values, t)}</span>}
           </div>
-          {extra && <p className="mt-1 text-xs text-mute">{extra(metrics, t)}</p>}
+          {extra && !empty && <p className="mt-1 text-xs text-mute">{extra(values, t)}</p>}
         </button>
       ))}
     </div>

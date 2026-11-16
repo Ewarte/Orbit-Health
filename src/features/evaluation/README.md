@@ -4,4 +4,4 @@
 
 **Quién:** R3
 
-**Ahora hay:** `healthEngine.ts` con rangos para presión, pulso, oxígeno, respiración, temperatura, sueño, ánimo y ejercicio, visión y glucosa (solo si se midió), y `derivedBloodPressure` (presión media y de pulso, que no cambian el estado). Los umbrales son un borrador sin validación clínica.
+**Ahora hay:** `healthEngine.ts` con rangos para presión (sistólica y diastólica; vale la peor), pulso, oxígeno, respiración, temperatura, sueño, ánimo y ejercicio, visión y glucosa (solo si se midió), y `derivedBloodPressure` (presión media y de pulso, que no cambian el estado). Los umbrales son un borrador sin validación clínica.

@@ -16,23 +16,27 @@ import type { Mission } from '../../types'
 import { DailyCheckAssistant } from './DailyCheckAssistant'
 import { DailyCheckHistory } from './DailyCheckHistory'
 import { DailyMetricCards } from './DailyMetricCards'
-import { steps, type StepId } from './dailyCheckData'
-import type { DailyMetrics } from './dailyCheckTypes'
+import { formatUtcHHMM, steps, type StepId } from './dailyCheckData'
+import type { DailyMetrics, SavedRecord } from './dailyCheckTypes'
 import { useDailyCheck } from './useDailyCheck'
 
 interface Props {
   mission?: Mission
-  onComplete?: (metrics: DailyMetrics) => void
+  onComplete?: (metrics: DailyMetrics, record: SavedRecord) => void
   onNavigate?: (screen: string) => void
+  /** Abre el asistente nada más entrar (primer chequeo desde Hoy). */
+  startWithAssistant?: boolean
 }
 
-export function DailyCheckPage({ mission, onComplete, onNavigate }: Props) {
+export function DailyCheckPage({ mission, onComplete, onNavigate, startWithAssistant = false }: Props) {
   const { t } = useI18n()
   const check = useDailyCheck(onComplete)
-  const [assistantOpen, setAssistantOpen] = useState(false)
+  const [assistantOpen, setAssistantOpen] = useState(startWithAssistant)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [step, setStep] = useState(0)
   const [draft, setDraft] = useState(check.metrics)
+
+  const lastCheckAt = check.lastCheckAt
 
   function openAssistant(stepId?: StepId) {
     setDraft({ ...check.metrics })
@@ -56,15 +60,17 @@ export function DailyCheckPage({ mission, onComplete, onNavigate }: Props) {
             {t('check.title')}
           </h1>
           <p className="text-sm text-mute">
-            {t('check.lastCheck', {
-              place: mission?.place ?? t('mission.simulationPlace'),
-              time: check.lastSavedTime || mission?.lastCheck || '07:10',
-            })}
+            {lastCheckAt
+              ? t('check.lastCheck', {
+                  place: mission?.place ?? t('mission.simulationPlace'),
+                  time: `${formatUtcHHMM(lastCheckAt)} UTC`,
+                })
+              : t('dash.noCheckYet', { place: mission?.place ?? t('mission.simulationPlace') })}
           </p>
         </header>
 
         <StatusHero
-          completed={check.savedRecords.length > 0}
+          completed={check.measured !== null}
           recordCount={check.savedRecords.length}
           onHistory={() => setHistoryOpen(true)}
           onEdit={() => openAssistant()}
@@ -85,13 +91,13 @@ export function DailyCheckPage({ mission, onComplete, onNavigate }: Props) {
             </button>
           </div>
 
-          <DailyMetricCards metrics={check.metrics} onSelect={openAssistant} />
+          <DailyMetricCards metrics={check.measured} onSelect={openAssistant} />
         </section>
 
         <section className="mt-5 flex flex-col gap-3 sm:flex-row">
           <button
             type="button"
-            onClick={check.saveAll}
+            onClick={() => { if (!check.saveAll()) openAssistant() }}
             className="flex min-h-12 flex-1 items-center justify-center gap-3 rounded-xl border-2 border-ok bg-notice px-6 py-4 text-base font-bold text-ok hover:brightness-110"
           >
             <HardDriveDownload className="h-5 w-5" /> {t('check.record')}
@@ -162,7 +168,7 @@ function Notification({
       <button
         type="button"
         onClick={onClose}
-        className="rounded p-2 hover:bg-panel"
+        className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded hover:bg-panel"
         aria-label={closeLabel}
       >
         <X className="h-4 w-4" />

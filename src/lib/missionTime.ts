@@ -95,17 +95,34 @@ export function formatMarsHours(hours: number): string {
   return `${two(Math.floor(total / 3_600))}:${two(Math.floor((total % 3_600) / 60))}:${two(total % 60)}`
 }
 
-/** Número de sol desde la llegada: el sol de la llegada es el 1. */
-export function solNumber(nowMs: number, arrivalMs: number): number {
-  return Math.floor(marsSolDate(nowMs) - marsSolDate(arrivalMs)) + 1
+/**
+ * Índice entero del sol local en el instante dado. Criterio ÚNICO de cambio de sol: la medianoche
+ * solar media local (LMST) del sitio, que es la que usan los equipos de rovers. Lo comparten
+ * solNumber y missionClock, para que el número de sol y la clave de día de la rutina coincidan.
+ */
+function localSolIndex(nowMs: number, eastLongitudeDeg: number): number {
+  return Math.floor(marsSolDate(nowMs) + eastLongitudeDeg / 360)
+}
+
+/** Número de sol desde la llegada (el sol de la llegada es el 1), contado en medianoches LMST del sitio. */
+export function solNumber(nowMs: number, arrivalMs: number, eastLongitudeDeg: number = DEFAULT_MARS_LONGITUDE): number {
+  return localSolIndex(nowMs, eastLongitudeDeg) - localSolIndex(arrivalMs, eastLongitudeDeg) + 1
 }
 
 // ---------------------------------------------------------------------------
 // Datos de la misión guardados
 // ---------------------------------------------------------------------------
 
+/** Fecha ISO con hora y zona explícita al final: «Z» o un desfase como «+02:00», «-0500» o «+02». */
+const EXPLICIT_ZONE = /T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}(?::?\d{2})?)$/i
+
+/**
+ * Lee una fecha ISO en UTC. SOLO acepta fechas con zona explícita (Z u offset): sin zona,
+ * Date.parse las leería como hora local del dispositivo y la misión dejaría de ser UTC.
+ * Una fecha sin zona, vacía o inválida da null.
+ */
 export function parseUtc(value: string | undefined): number | null {
-  if (!value) return null
+  if (!value || !EXPLICIT_ZONE.test(value.trim())) return null
   const ms = Date.parse(value)
   return Number.isNaN(ms) ? null : ms
 }
@@ -118,13 +135,13 @@ export function defaultMission(nowMs: number): Mission {
     environment: 'station',
     launchUtc: new Date(nowMs - 46 * MS_PER_DAY).toISOString(),
     place: DEFAULT_PLACE,
-    lastCheck: '07:10',
     day: 47,
   }
 }
 
 /**
- * Lee lo guardado en localStorage. Formato viejo {day, place, lastCheck}: entorno
+ * Lee lo guardado en localStorage (un lastCheck guardado por versiones anteriores se ignora).
+ * Formato viejo {day, place}: entorno
  * 'station' y despegue = ahora − (day−1) días. Cualquier cosa dañada da la demostración.
  */
 export function normalizeMission(raw: unknown, nowMs: number): Mission {
@@ -132,7 +149,6 @@ export function normalizeMission(raw: unknown, nowMs: number): Mission {
   if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return fallback
   const data = raw as Record<string, unknown>
   const place = typeof data.place === 'string' ? data.place : fallback.place
-  const lastCheck = typeof data.lastCheck === 'string' ? data.lastCheck : fallback.lastCheck
 
   const env = data.environment
   const launchMs = typeof data.launchUtc === 'string' ? parseUtc(data.launchUtc) : null
@@ -141,7 +157,6 @@ export function normalizeMission(raw: unknown, nowMs: number): Mission {
       environment: env as MissionEnvironment,
       launchUtc: new Date(launchMs).toISOString(),
       place,
-      lastCheck,
       day: flightDay(nowMs, launchMs),
     }
     const arrival = typeof data.arrivalUtc === 'string' ? parseUtc(data.arrivalUtc) : null
@@ -155,7 +170,7 @@ export function normalizeMission(raw: unknown, nowMs: number): Mission {
   // Formato viejo.
   const oldDay = typeof data.day === 'number' && Number.isFinite(data.day) ? Math.max(1, Math.round(data.day)) : 47
   const launch = nowMs - (oldDay - 1) * MS_PER_DAY
-  return { environment: 'station', launchUtc: new Date(launch).toISOString(), place, lastCheck, day: oldDay }
+  return { environment: 'station', launchUtc: new Date(launch).toISOString(), place, day: oldDay }
 }
 
 // ---------------------------------------------------------------------------
@@ -182,8 +197,8 @@ export function missionClock(
     const msd = marsSolDate(nowMs)
     const lmst = marsLocalMeanSolarTime(msd, lon)
     const refMs = parseUtc(mission.arrivalUtc) ?? parseUtc(mission.launchUtc) ?? nowMs
-    // El sol local cambia a la medianoche local (LMST), no a la de MTC.
-    const sol = Math.floor(msd + lon / 360) - Math.floor(marsSolDate(refMs) + lon / 360) + 1
+    // Mismo criterio que solNumber: el sol cambia a la medianoche local (LMST).
+    const sol = solNumber(nowMs, refMs, lon)
     return { minutesOfDay: Math.floor(lmst * 60), dayKey: `sol-${sol}`, label: 'LMST' }
   }
   const d = new Date(nowMs)
